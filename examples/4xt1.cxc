@@ -1,0 +1,9 @@
+open 4xt1
+hide; show cartoon
+hide #!1.1 models
+chimenodes preset mn_default
+color #1/A #303030; color #1/B #30be8a; color #1/C #3066be
+surface #1/A; transparency #1/A 60 target s
+chimenodes glow #1/B strength 0.8 color #30be8a
+chimenodes glow #1/C strength 0.8 color #3066be
+chimenodes glowLight 3.0
