@@ -44,7 +44,7 @@ def main(session):
     def R(c):
         return run(session, c, log=False)
 
-    def save_jpg(img, name, q=90):
+    def save_jpg(img, name, q=92):
         Image.fromarray(img[..., :3].astype("uint8")).save(os.path.join(OUT, name), quality=q, optimize=True)
 
     def shot(w, h, ss=3):
@@ -96,7 +96,7 @@ def main(session):
         R("clip near -%s far %s position :%s" % (slab, slab, ligand))
         return ligand_hex
 
-    def render_pair(key, glow_spec, glow_hex, strength, w=1600, h=1000):
+    def render_pair(key, glow_spec, glow_hex, strength, w=2560, h=1600):
         # stock
         R("chimenodes off")
         save_jpg(shot(w, h, 2), "%s_stock.jpg" % key)
@@ -110,7 +110,7 @@ def main(session):
         pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffb86b", 3, 9)
         render_pair("er", ":OHT", "#ffb86b", 3)
         # hero banner
-        save_jpg(shot(2400, 1200, 3), "hero.jpg", 88)
+        save_jpg(shot(3200, 1600, 3), "hero.jpg", 90)
         return {}
 
     @scene("sav")
@@ -146,7 +146,7 @@ def main(session):
                 R("chimenodes glow :OHT strength 3 color #ffb86b")
                 if key in ("look", "agx", "outline"):
                     R("chimenodes glow 0")
-            save_jpg(shot(900, 560, 2), "gallery_%s.jpg" % key, 88)
+            save_jpg(shot(1280, 800, 2), "gallery_%s.jpg" % key, 90)
             meta.append({"key": key, "label": label, "command": command})
         return {"variants": meta}
 
