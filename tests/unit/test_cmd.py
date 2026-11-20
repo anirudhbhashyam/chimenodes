@@ -1,5 +1,30 @@
+import sys
+import types
+
 import pytest
 from tests.unit.conftest import load
+
+
+class _Logger:
+    def __init__(self):
+        self.warnings = []
+
+    def warning(self, msg):
+        self.warnings.append(msg)
+
+    def status(self, msg, **kw):
+        pass
+
+
+class _Session:
+    def __init__(self):
+        self.logger = _Logger()
+
+
+def _patch_state(ok):
+    m = types.ModuleType("cnsrc.state")
+    m.apply_params = lambda session, params: ok
+    sys.modules["cnsrc.state"] = m
 
 
 def test_merge_no_preset_keeps_base():
@@ -54,3 +79,30 @@ def test_builtin_presets_merge():
         kw = presets.get_preset(name)
         out = cmd.merge_params(load("params").Params(), kw, {}, name)
         assert out.preset == name
+
+
+def test_commit_fails_safe_when_pipeline_cannot_enable():
+    # When the pipeline cannot be enabled (e.g. no OpenGL 3.3 core in an offscreen or
+    # software-GL context), _commit must fail safe to stock rendering with a warning,
+    # not raise -- otherwise a batch/offscreen render script aborts mid-run.
+    cmd, params = load("cmd"), load("params")
+    _patch_state(False)
+    try:
+        s = _Session()
+        ok = cmd._commit(s, params.Params(enabled=True))
+        assert ok is False
+        assert any("could not enable" in w for w in s.logger.warnings)
+    finally:
+        sys.modules.pop("cnsrc.state", None)
+
+
+def test_commit_quiet_on_success():
+    cmd, params = load("cmd"), load("params")
+    _patch_state(True)
+    try:
+        s = _Session()
+        ok = cmd._commit(s, params.Params(enabled=True))
+        assert ok is True
+        assert s.logger.warnings == []
+    finally:
+        sys.modules.pop("cnsrc.state", None)

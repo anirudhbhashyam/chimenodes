@@ -105,10 +105,13 @@ def _focus_depth(session, focus) -> float:
 def _commit(session, params: Params, message: bool = True):
     from . import state
     ok = state.apply_params(session, params)
-    from chimerax.core.errors import UserError
     if not ok and params.enabled:
-        raise UserError("chimenodes: could not enable rendering pipeline "
-                        "(see log; OpenGL 3.3 core required)")
+        # Fail safe to stock rendering (see ARCHITECTURE.md) with a warning rather than a
+        # hard error, so batch/offscreen scripts on a context without an OpenGL 3.3 core
+        # (headless or software GL) keep running instead of aborting mid-render.
+        session.logger.warning(
+            "chimenodes: could not enable the rendering pipeline "
+            "(OpenGL 3.3 core required; see log) -- leaving stock rendering")
     return ok
 
 
