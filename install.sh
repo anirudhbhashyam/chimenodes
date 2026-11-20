@@ -246,9 +246,9 @@ main() {
     cat <<'EOF'
 
 Next steps (in ChimeraX):
-    open 1ycr                       # any structure
+    open 1brs                       # any structure
     chimenodes preset mn_default    # MolecularNodes-style look
-    chimenodes glow /B strength 2   # per-object glow (bloom)
+    chimenodes glow /D strength 1.1 # per-object glow (bloom)
     chimenodes off                  # back to stock rendering
 Uninstall:  curl -fsSL <url>/install.sh | sh -s -- --uninstall
 EOF

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>chimenodes: MolecularNodes-style rendering for ChimeraX</title>
-<meta name="description" content="Glowing ligands in binding pockets and binders docking, rendered in UCSF ChimeraX with chimenodes.">
-<meta property="og:title" content="chimenodes">
+<meta name="description" content="Shaders for ChimeraX: glowing ligands in binding pockets and binders docked to their targets, rendered in UCSF ChimeraX with chimenodes.">
+<meta property="og:title" content="chimenodes: Shaders for ChimeraX">
 <meta property="og:description" content="MolecularNodes-style rendering and glow for UCSF ChimeraX.">
 <meta property="og:image" content="https://anirudhbhashyam.github.io/chimenodes/assets/hero.jpg">
 <style>
@@ -158,10 +158,10 @@ a { color: inherit; }
 
   <!-- 1. title -->
   <section class="slide hero" data-title="chimenodes">
-    <div class="heroimg"><img src="assets/hero.jpg" alt="A glowing ligand inside a translucent protein pocket"></div>
+    <div class="heroimg"><img src="assets/hero.jpg" alt="A glowing ligand inside a translucent protein pocket, rendered in ChimeraX"></div>
     <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div></header>
     <div class="copy">
-      <h1>Glow inside<br>the pocket.</h1>
+      <h1>Shaders for<br>ChimeraX.</h1>
       <p><b>MolecularNodes-style rendering for UCSF ChimeraX.</b> Soft ambient occlusion, satin materials, filmic tone mapping and per-atom emission with bloom, all in real time and in every <code>save image</code> and <code>movie record</code>.</p>
     </div>
     <div class="foot"><div class="cmds"><code>chimenodes preset mn_default</code><code>chimenodes glow :LIG strength 3</code></div></div>
@@ -203,17 +203,31 @@ a { color: inherit; }
     <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow :STI strength 3 color #ff4fd0</code></div></div>
   </section>
 
-  <!-- 5. 1YCR binder animation -->
-  <section class="slide" data-title="1YCR" style="--glow:#7dffb0">
-    <header class="tag"><div class="pdb"><span class="dot"></span>1ycr</div><div class="what"><b>MDM2</b> · p53 transactivation peptide, a binder docking</div></header>
-    <div class="stage"><div class="frame media">
-      <img src="assets/binding_poster.jpg" data-src="assets/binding.webp" data-anim alt="Animation: the p53 peptide glows brighter as it docks into the MDM2 cleft">
-      <span class="chip r">glow rises as it binds</span>
+  <!-- 5. 1BRS binder -->
+  <section class="slide" data-title="1BRS" style="--glow:#7dffb0">
+    <header class="tag"><div class="pdb"><span class="dot"></span>1brs</div><div class="what"><b>Barnase</b> · barstar, a binder docking</div></header>
+    <div class="stage"><div class="frame cmp" style="--p:50%">
+      <img data-src="assets/barn_stock.jpg" alt="1BRS in the default ChimeraX renderer">
+      <img class="top" data-src="assets/barn_mn.jpg" alt="1BRS with chimenodes: glowing barstar bound to barnase">
+      <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
+      <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
     </div></div>
-    <div class="foot"><div class="cmds"><code>chimenodes glow /B strength 1.7 color #7dffb0</code><code>chimenodes preset mn_default ao 1 glow 1.4</code></div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow /D strength 1.1 color #7dffb0</code></div></div>
   </section>
 
-  <!-- 6. gallery -->
+  <!-- 6. 6M0J binder -->
+  <section class="slide" data-title="6M0J" style="--glow:#b78cff">
+    <header class="tag"><div class="pdb"><span class="dot"></span>6m0j</div><div class="what"><b>ACE2</b> · SARS-CoV-2 spike RBD, a binder docking</div></header>
+    <div class="stage"><div class="frame cmp" style="--p:50%">
+      <img data-src="assets/rbd_stock.jpg" alt="6M0J in the default ChimeraX renderer">
+      <img class="top" data-src="assets/rbd_mn.jpg" alt="6M0J with chimenodes: glowing RBD bound to ACE2">
+      <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
+      <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
+    </div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow /E strength 1.1 color #b78cff</code></div></div>
+  </section>
+
+  <!-- 7. gallery -->
   <section class="slide" data-title="Effects" style="--glow:#ffa02e">
     <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>One scene, eight looks</b> · each stage of the pipeline</div></header>
     <div class="stage"><div class="grid">
@@ -229,7 +243,7 @@ a { color: inherit; }
     <div class="foot"><div class="cmds"><code>chimenodes preset neon</code><code>chimenodes dof 1 aperture 0.7</code><code>chimenodes outline 0.8</code><code>chimenodes tonemap agx exposure 0.25</code></div></div>
   </section>
 
-  <!-- 7. how it works -->
+  <!-- 8. how it works -->
   <section class="slide" data-title="How it works">
     <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>How it works</b></div></header>
     <div class="copy">
@@ -247,21 +261,21 @@ a { color: inherit; }
     <div class="foot"><div class="cmds"><code>OpenGL 3.3 core</code><code>macOS, Linux, Windows</code><code>ChimeraX ≥ 1.8</code></div></div>
   </section>
 
-  <!-- 8. install -->
+  <!-- 9. install -->
   <section class="slide" data-title="Install">
     <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>Install</b></div></header>
     <div class="copy">
       <h2>One line. No Python setup.</h2>
       <p>The installer finds ChimeraX, then builds and installs the bundle with ChimeraX's own bundled Python, so you don't need system Python, uv, pixi or git.</p>
       <div class="install"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh | sh</code><button class="btn" id="copy" type="button">Copy</button></div>
-      <p>Then, in ChimeraX: <code>open 1ycr</code> · <code>chimenodes preset mn_default</code> · <code>chimenodes glow /B strength 2</code></p>
+      <p>Then, in ChimeraX: <code>open 1brs</code> · <code>chimenodes preset mn_default</code> · <code>chimenodes glow /D strength 1.1</code></p>
     </div>
     <div class="foot"><div class="cmds"><code>chimenodes off</code><code>sh install.sh --uninstall</code></div></div>
   </section>
 </main>
 
 <nav class="nav" aria-label="Slides">
-  <span class="count" id="count" aria-live="polite">1 / 8</span>
+  <span class="count" id="count" aria-live="polite">1 / 9</span>
   <button id="prev" type="button" aria-label="Previous slide">&#8592;</button>
   <button id="next" type="button" aria-label="Next slide">&#8594;</button>
 </nav>
