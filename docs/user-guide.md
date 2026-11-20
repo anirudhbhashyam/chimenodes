@@ -35,3 +35,14 @@ leaves rendering stock and logs a warning.
 - Nothing changes: run `chimenodes info`; check the GL version is 3.3+.
 - Image differs between window and `save image`: all radii are relative to image height, so
   results should match; report if not.
+
+## Failure handling and known limitations
+
+- If one effect pass raises an error, only that pass is disabled (a warning is logged) and the
+  rest of the chain keeps running. `chimenodes reset` or re-enabling reloads passes. If the core
+  framebuffer machinery itself fails, chimenodes uninstalls and ChimeraX renders normally.
+- ChimeraX's own `graphics silhouettes true` captures colour only, so depth-based passes
+  (dof, outline) see no depth while it is on. The MN look turns it off; use `chimenodes outline`.
+- Stereo, 360 and VR cameras and OpenGL recording bypass chimenodes.
+- Per-object glow re-renders the scene once, roughly doubling frame cost while glow is active.
+- Transparent surfaces do not write depth, so depth of field and outline ignore them.

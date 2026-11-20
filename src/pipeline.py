@@ -170,6 +170,7 @@ class Pipeline(object):
         self.params = Params()
         self.emission = None
         self.passes: List[Tuple[int, Any]] = []
+        self.disabled_passes = set()  # names of passes that raised; skipped from then on
         self.reload_passes()
         # GL resources (created lazily, inside a current context)
         self._scene = None
@@ -189,6 +190,7 @@ class Pipeline(object):
 
     # -- configuration -------------------------------------------------------------
     def reload_passes(self):
+        self.disabled_passes.clear()
         log = None
         if self.session is not None:
             log = self.session.logger.warning
@@ -209,6 +211,8 @@ class Pipeline(object):
             return []
         out = []
         for _o, ps in self.passes:
+            if getattr(ps, "name", id(ps)) in self.disabled_passes:
+                continue
             try:
                 if ps.enabled(p):
                     out.append(ps)
@@ -377,10 +381,19 @@ class Pipeline(object):
                             pass_ctx.target = final
                             pass_ctx.blit(src.texture)
                             pass_ctx._wrote = True
-                except Exception:
+                except Exception as e:
+                    # Per-pass fail-safe: skip just this pass from now on and keep going
+                    # with the rest of the chain (identity for this frame).
                     if tgt is not final:
                         pass_ctx.release(tgt)
-                    raise
+                    self._disable_pass(ps, e)
+                    if tgt is final:
+                        try:
+                            pass_ctx.target = final
+                            pass_ctx.blit(src.texture)
+                        except Exception:
+                            raise e
+                    continue
                 if not pass_ctx._wrote:
                     pass_ctx.release(tgt)
                     continue
@@ -401,6 +414,16 @@ class Pipeline(object):
             self._exit_state()
             self.frames += 1
             self.last_ms = (time.time() - self._t0) * 1000.0
+
+    def _disable_pass(self, ps, exc):
+        name = getattr(ps, "name", None) or type(ps).__name__
+        self.disabled_passes.add(name)
+        try:
+            self.session.logger.warning(
+                "chimenodes: pass '%s' failed and was disabled (%s: %s)"
+                % (name, type(exc).__name__, str(exc)[:300]))
+        except Exception:
+            pass
 
     def render_emission(self, ctx, scope):
         """Draw the scene again with ``scope`` active into a float RT; returns its texture."""
