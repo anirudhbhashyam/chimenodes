@@ -5,7 +5,7 @@ so a problem in one module (command, tool, state) never prevents ChimeraX from s
 """
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 try:
     from chimerax.core.toolshed import BundleAPI

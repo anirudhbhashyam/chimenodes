@@ -1,5 +1,5 @@
 <BundleInfo name="ChimeraX-Chimenodes"
-            version="0.1.0"
+            version="1.0.0"
             package="chimerax.chimenodes"
             minSessionVersion="1" maxSessionVersion="1"
             customInit="true"
@@ -29,7 +29,7 @@
   </DataFiles>
 
   <Classifiers>
-    <PythonClassifier>Development Status :: 3 - Alpha</PythonClassifier>
+    <PythonClassifier>Development Status :: 4 - Beta</PythonClassifier>
     <PythonClassifier>License :: OSI Approved :: MIT License</PythonClassifier>
     <PythonClassifier>Programming Language :: Python :: 3.9</PythonClassifier>
     <PythonClassifier>Programming Language :: Python :: 3.11</PythonClassifier>
