@@ -236,7 +236,11 @@ def _hue_only(rgb):
 
 def _blacken_surfaces(session, saved):
     """Make surface models (molecular surfaces, shapes) black but keep their opacity, so they
-    occlude/dim glow behind them in the emission buffer instead of adding colour to it."""
+    occlude/dim glow behind them in the emission buffer instead of adding colour to it.
+
+    Everything needed to restore a drawing exactly (per-instance colours, vertex colours and
+    ``auto_recolor_vertices``, which the vertex-colour setter would otherwise clear) is saved first.
+    """
     import numpy as np
     try:
         from chimerax.core.models import Surface
@@ -247,19 +251,33 @@ def _blacken_surfaces(session, saved):
             continue
         for d in m.all_drawings():
             try:
-                col = np.array(d.color, np.uint8).copy()
+                cols = d.colors
+                cols = None if cols is None else np.array(cols, np.uint8)
                 vcol = d.vertex_colors
-                vcol = None if vcol is None else vcol.copy()
-                saved.append((d, col, vcol))
-                black = col.copy()
-                black[:3] = 0
-                d.color = black
+                vcol = None if vcol is None else np.array(vcol, np.uint8)
+                auto = getattr(d, "auto_recolor_vertices", None)
+                saved.append((d, cols, vcol, auto))      # saved before any mutation
+                if cols is not None:
+                    black = cols.copy()
+                    black[:, :3] = 0
+                    d.colors = black
                 if vcol is not None:
                     nv = vcol.copy()
                     nv[:, :3] = 0
                     d.vertex_colors = nv
             except Exception:
                 continue
+
+
+def _restore_surfaces(saved):
+    for d, cols, vcol, auto in saved:
+        try:
+            if cols is not None:
+                d.colors = cols
+            d.vertex_colors = vcol            # setter clears auto_recolor_vertices ...
+            d.auto_recolor_vertices = auto    # ... so put it back
+        except Exception:
+            pass
 
 
 def emission_gain(session):
@@ -396,12 +414,7 @@ def emission_scope(session):
         lighting.depth_cue = False
         yield gain
     finally:
-        for d, col, vcol in saved_surf:
-            try:
-                d.vertex_colors = vcol
-                d.color = col
-            except Exception:
-                pass
+        _restore_surfaces(saved_surf)
         for s, ac, rc in saved:
             try:
                 s.atoms.colors = ac

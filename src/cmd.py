@@ -228,10 +228,13 @@ def chimenodes_preset_list(session):
 
 def chimenodes_glow(session, objects=None, strength=None, color=None, **kw):
     """`chimenodes glow ATOMSPEC [strength S] [color C]`, or `chimenodes glow F ...`."""
+    from chimerax.core.errors import UserError
     if isinstance(objects, float):          # global form: chimenodes glow 1.5 ...
+        if strength is not None or color is not None:
+            raise UserError("chimenodes glow: 'strength' and 'color' apply to an atom spec, "
+                            "e.g. 'chimenodes glow /B strength 2 color red'")
         kw["glow"] = objects
         return chimenodes(session, **kw)
-    from chimerax.core.errors import UserError
     try:
         from . import glow
     except ImportError:
@@ -242,6 +245,8 @@ def chimenodes_glow(session, objects=None, strength=None, color=None, **kw):
     rgba = None if color is None else color
     glow.set_glow(session, objects, s, rgba)
     from . import state
+    if s <= 0:
+        return          # removing glow must never switch rendering on
     p = state.get_params(session)
     if not p.enabled or p.glow == 0:
         q = Params.from_dict(p.to_dict())

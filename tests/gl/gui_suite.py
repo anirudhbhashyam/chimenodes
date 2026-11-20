@@ -247,13 +247,37 @@ def main(session):
         from chimerax.chimenodes import glow as gm
         m = scene["model"]
         gm.clear_glow(session)
-        run(session, "chimenodes glow #1:1@C1,C2,C3 strength 2", log=False)
+        run(session, "chimenodes glow #%s:1@C1,C2,C3 strength 2" % m.id_string, log=False)
         d = getattr(m, gm._STORE)
         n = int((d["strength"] > 0).sum())
         gm.clear_glow(session)
         reset()
         check(n == 3, "expected 3 glowing atoms, got %d of %d" % (n, m.num_atoms))
         return {"glowing": n, "total": m.num_atoms}
+
+    @case("surface_state_survives_emission_pass")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        import numpy as np
+        run(session, "surface #%s enclose #%s; transparency #%s 60 target s" % ((scene["model"].id_string,) * 3), log=False)
+        from chimerax.core.models import Surface
+        surf = [m for m in session.models.list() if isinstance(m, Surface)]
+        check(surf, "no surface created")
+        d = surf[0]
+        sentinel = lambda: None  # noqa: E731
+        d.auto_recolor_vertices = sentinel
+        before_v = None if d.vertex_colors is None else d.vertex_colors.copy()
+        before_c = np.array(d.colors).copy()
+        run(session, "chimenodes glow #%s:1@C1 strength 2; chimenodes glow 1" % scene["model"].id_string, log=False)
+        render()
+        run(session, "chimenodes glow clear", log=False)
+        reset()
+        check(d.auto_recolor_vertices is sentinel, "auto_recolor_vertices was cleared")
+        check(np.array_equal(np.array(d.colors), before_c), "surface colours not restored")
+        if before_v is not None:
+            check(np.array_equal(d.vertex_colors, before_v), "vertex colours not restored")
+        run(session, "surface close", log=False)
+        return {}
 
     @case("resolution_consistency_2x")
     def _():

@@ -15,7 +15,7 @@
 | `chimenodes on/off/toggle/reset/info` | Switch pipeline, reset parameters, diagnostics |
 | `chimenodes [preset NAME] [options]` | Apply a preset, then explicit options on top |
 | `chimenodes preset save/delete/list NAME` | Manage user presets (built-ins cannot be deleted) |
-| `chimenodes glow F` | Same as `chimenodes glow F` keyword: global bloom strength |
+| `chimenodes glow F` | Global bloom strength (same as the `glow` keyword) |
 | `chimenodes glow ATOMSPEC strength S color C` | Make atoms emissive; `chimenodes glow clear [ATOMSPEC]` |
 | `chimenodes export blender PATH` | Structure + JSON sidecar + `render_blender.py` |
 
@@ -52,3 +52,6 @@ leaves rendering stock and logs a warning.
 `chimenodes glow ATOMSPEC strength S [color C]` marks only the atoms in the spec (e.g. `:OHT`, `/B`,
 `#1:12@C1,C2`). Surfaces (including translucent ones) are drawn black in the emission pass, so they dim
 glow behind them instead of adding colour. `chimenodes glow clear` removes all emission.
+
+Limitations of the emission pass: only surface models are blackened. Pseudobonds, markers and volume
+image styles keep their colours and will leak into the glow buffer if displayed.

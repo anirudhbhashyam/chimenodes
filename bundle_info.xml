@@ -8,7 +8,7 @@
 
   <Author>chimenodes contributors</Author>
   <Email>none@example.com</Email>
-  <URL>https://github.com/</URL>
+  <URL>https://github.com/anirudhbhashyam/chimenodes</URL>
   <Synopsis>MolecularNodes-style rendering and glow for ChimeraX</Synopsis>
   <Description>Post-processing renderer (AO look, bloom glow, tone mapping, DOF, outline) that
   emulates the look of MolecularNodes. Cross-platform OpenGL 3.3.</Description>

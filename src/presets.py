@@ -54,9 +54,14 @@ def _dir(directory: Optional[str]) -> str:
     return directory if directory else default_user_dir()
 
 
+RESERVED = ("save", "delete", "list")   # subcommands of `chimenodes preset`
+
+
 def _check_name(name: str) -> str:
     if not isinstance(name, str) or not _NAME_RE.match(name):
         raise ValueError("invalid preset name %r (use letters, digits, _ and -)" % (name,))
+    if name.lower() in RESERVED:
+        raise ValueError("preset name %r is reserved" % (name,))
     return name
 
 

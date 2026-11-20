@@ -2,8 +2,7 @@
 
 A ChimeraX bundle that emulates the look of [MolecularNodes](https://github.com/BradyAJohnston/MolecularNodes).
 
-**Showcase:** [slides](https://anirudhbhashyam.github.io/chimenodes/) (glowing ligands in pockets, a binder docking). Regenerate the assets with
-`ChimeraX --exit --script tools/showcase/render_showcase.py` (opens a GUI window briefly; needs network for PDB fetches).
+**Showcase:** [slides](https://anirudhbhashyam.github.io/chimenodes/)
 
 ## Install (one line)
 
@@ -14,11 +13,11 @@ curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/ins
 ```
 
 The script finds ChimeraX on macOS, Linux and Windows
-(Git Bash/WSL) and stops with download instructions if it is missing (the ChimeraX license must be
+(Git Bash) and stops with download instructions if it is missing (the ChimeraX license must be
 accepted by you, so it is never downloaded automatically).
 
-## Install
-Development (editable) install, any platform:
+## Editable install (development)
+Editable install, any platform:
 
   python scripts/dev_install.py            # or scripts/dev_install.sh / .bat
 

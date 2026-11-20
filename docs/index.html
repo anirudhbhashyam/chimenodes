@@ -7,7 +7,7 @@
 <meta name="description" content="Glowing ligands in binding pockets and binders docking, rendered in UCSF ChimeraX with chimenodes.">
 <meta property="og:title" content="chimenodes">
 <meta property="og:description" content="MolecularNodes-style rendering and glow for UCSF ChimeraX.">
-<meta property="og:image" content="assets/hero.jpg">
+<meta property="og:image" content="https://anirudhbhashyam.github.io/chimenodes/assets/hero.jpg">
 <style>
 @font-face {
   font-family: "Inter";
@@ -143,8 +143,9 @@ a { color: inherit; }
   .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid { grid-template-columns: repeat(2, 1fr); overflow: auto; align-content: start; }
   .foot { padding-right: 0; flex-direction: column; align-items: flex-start; padding-bottom: 76px; }
-  .frame { aspect-ratio: auto; width: 100%; height: auto; max-height: 100%; }
-  .cmp .frame, .frame.media { aspect-ratio: 16 / 10; height: auto; }
+  .frame { width: 100%; height: auto; aspect-ratio: 16 / 10; }
+  .hint { display: none; }
+  .copy { align-self: start; }
   .copy { padding-bottom: 80px; }
 }
 @media (prefers-reduced-motion: reduce) { .slide, .progress { transition: none; } }
@@ -153,7 +154,7 @@ a { color: inherit; }
 <body>
 <div class="progress" id="progress"></div>
 
-<main class="deck" id="deck" aria-live="polite">
+<main class="deck" id="deck">
 
   <!-- 1. title -->
   <section class="slide hero" data-title="chimenodes">
@@ -170,8 +171,8 @@ a { color: inherit; }
   <section class="slide" data-title="3ERT" style="--glow:#ffa02e">
     <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>Estrogen receptor α</b> · 4-hydroxytamoxifen (OHT)</div></header>
     <div class="stage"><div class="frame cmp" style="--p:50%">
-      <img src="assets/er_stock.jpg" alt="3ERT in the default ChimeraX renderer" loading="lazy">
-      <img class="top" src="assets/er_mn.jpg" alt="3ERT with chimenodes: glowing ligand" loading="lazy">
+      <img data-src="assets/er_stock.jpg" alt="3ERT in the default ChimeraX renderer">
+      <img class="top" data-src="assets/er_mn.jpg" alt="3ERT with chimenodes: glowing ligand">
       <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
       <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
     </div></div>
@@ -182,8 +183,8 @@ a { color: inherit; }
   <section class="slide" data-title="1STP" style="--glow:#2fe3ff">
     <header class="tag"><div class="pdb"><span class="dot"></span>1stp</div><div class="what"><b>Streptavidin</b> · biotin (BTN)</div></header>
     <div class="stage"><div class="frame cmp" style="--p:50%">
-      <img src="assets/sav_stock.jpg" alt="1STP in the default ChimeraX renderer" loading="lazy">
-      <img class="top" src="assets/sav_mn.jpg" alt="1STP with chimenodes: glowing biotin" loading="lazy">
+      <img data-src="assets/sav_stock.jpg" alt="1STP in the default ChimeraX renderer">
+      <img class="top" data-src="assets/sav_mn.jpg" alt="1STP with chimenodes: glowing biotin">
       <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
       <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
     </div></div>
@@ -194,8 +195,8 @@ a { color: inherit; }
   <section class="slide" data-title="1IEP" style="--glow:#ff4fd0">
     <header class="tag"><div class="pdb"><span class="dot"></span>1iep</div><div class="what"><b>Abl kinase</b> · imatinib (STI)</div></header>
     <div class="stage"><div class="frame cmp" style="--p:50%">
-      <img src="assets/abl_stock.jpg" alt="1IEP in the default ChimeraX renderer" loading="lazy">
-      <img class="top" src="assets/abl_mn.jpg" alt="1IEP with chimenodes: glowing imatinib" loading="lazy">
+      <img data-src="assets/abl_stock.jpg" alt="1IEP in the default ChimeraX renderer">
+      <img class="top" data-src="assets/abl_mn.jpg" alt="1IEP with chimenodes: glowing imatinib">
       <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
       <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
     </div></div>
@@ -206,7 +207,7 @@ a { color: inherit; }
   <section class="slide" data-title="1YCR" style="--glow:#7dffb0">
     <header class="tag"><div class="pdb"><span class="dot"></span>1ycr</div><div class="what"><b>MDM2</b> · p53 transactivation peptide, a binder docking</div></header>
     <div class="stage"><div class="frame media">
-      <img src="assets/binding.webp" alt="Animation: the p53 peptide glows brighter as it docks into the MDM2 cleft" loading="lazy">
+      <img src="assets/binding_poster.jpg" data-src="assets/binding.webp" data-anim alt="Animation: the p53 peptide glows brighter as it docks into the MDM2 cleft">
       <span class="chip r">glow rises as it binds</span>
     </div></div>
     <div class="foot"><div class="cmds"><code>chimenodes glow /B strength 1.7 color #7dffb0</code><code>chimenodes preset mn_default ao 1 glow 1.4</code></div></div>
@@ -216,14 +217,14 @@ a { color: inherit; }
   <section class="slide" data-title="Effects" style="--glow:#ffa02e">
     <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>One scene, eight looks</b> · each stage of the pipeline</div></header>
     <div class="stage"><div class="grid">
-      <figure class="tile"><img src="assets/gallery_stock.jpg" alt="" loading="lazy"><figcaption>ChimeraX default</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_look.jpg" alt="" loading="lazy"><figcaption>MN look: AO + satin</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_agx.jpg" alt="" loading="lazy"><figcaption>+ AgX tone mapping</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_glow.jpg" alt="" loading="lazy"><figcaption>+ glow</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_neon.jpg" alt="" loading="lazy"><figcaption>neon preset</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_cinematic.jpg" alt="" loading="lazy"><figcaption>cinematic preset</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_dof.jpg" alt="" loading="lazy"><figcaption>glow + depth of field</figcaption></figure>
-      <figure class="tile"><img src="assets/gallery_outline.jpg" alt="" loading="lazy"><figcaption>outline</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_stock.jpg" alt=""><figcaption>ChimeraX default</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_look.jpg" alt=""><figcaption>MN look: AO + satin</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_agx.jpg" alt=""><figcaption>+ AgX tone mapping</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_glow.jpg" alt=""><figcaption>+ glow</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_neon.jpg" alt=""><figcaption>neon preset</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_cinematic.jpg" alt=""><figcaption>cinematic preset</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_dof.jpg" alt=""><figcaption>glow + depth of field</figcaption></figure>
+      <figure class="tile"><img data-src="assets/gallery_outline.jpg" alt=""><figcaption>outline</figcaption></figure>
     </div></div>
     <div class="foot"><div class="cmds"><code>chimenodes preset neon</code><code>chimenodes dof 1 aperture 0.7</code><code>chimenodes outline 0.8</code><code>chimenodes tonemap agx exposure 0.25</code></div></div>
   </section>
@@ -233,10 +234,10 @@ a { color: inherit; }
     <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>How it works</b></div></header>
     <div class="copy">
       <h2>A post-process chain on top of ChimeraX's own renderer.</h2>
-      <p>The scene is drawn once into a floating-point buffer, glowing atoms are drawn again as pure emission (surfaces dim it, cartoons stay dark), and a short chain of fullscreen passes finishes the frame. Effects that are off cost nothing, and a failing pass disables itself without breaking rendering.</p>
+      <p>The scene is drawn once into a floating-point buffer, glowing atoms are drawn again as pure emission (surfaces dim it, cartoons stay dark), and a short chain of fullscreen passes finishes the frame. A pass whose effect is off is skipped (with every effect off, stock ChimeraX renders untouched), and a failing pass disables itself without breaking rendering.</p>
       <ol class="steps">
         <li><b>HDR capture</b>Scene plus depth into a 16-bit float buffer.</li>
-        <li><b>Emission</b>Per-atom <code>glow</code>, hue-only so dark chains glow as well as light ones.</li>
+        <li><b>Emission</b>Per-atom <code>glow</code>, colour normalised to full brightness so dark chains glow as well as light ones.</li>
         <li><b>Bloom</b>Dual-Kawase blur pyramid with a soft knee.</li>
         <li><b>Look</b>Ambient occlusion into albedo, satin shading, rim light.</li>
         <li><b>Lens</b>Depth of field and outline from linear depth.</li>
@@ -260,7 +261,7 @@ a { color: inherit; }
 </main>
 
 <nav class="nav" aria-label="Slides">
-  <span class="count" id="count">1 / 8</span>
+  <span class="count" id="count" aria-live="polite">1 / 8</span>
   <button id="prev" type="button" aria-label="Previous slide">&#8592;</button>
   <button id="next" type="button" aria-label="Next slide">&#8594;</button>
 </nav>
@@ -284,16 +285,28 @@ a { color: inherit; }
     prog.style.width = ((i + 1) / n * 100) + '%';
     prev.disabled = i === 0; next.disabled = i === n - 1;
     document.title = slides[i].dataset.title + ' · chimenodes';
-    if (push !== false) { try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {} }
+    load(i); load(i + 1);
+    if (push !== false && String(i + 1) !== (location.hash || '').slice(1)) {
+      try { history.pushState(null, '', '#' + (i + 1)); } catch (e) {}
+    }
+  }
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function load(k) {   // images are fetched when their slide (or the next one) is about to show
+    if (k < 0 || k >= n) return;
+    Array.prototype.forEach.call(slides[k].querySelectorAll('img[data-src]'), function (im) {
+      if (im.hasAttribute('data-anim') && reduce) return;   // keep the still poster
+      im.src = im.getAttribute('data-src'); im.removeAttribute('data-src');
+    });
   }
   function go(d) { show(i + d); }
 
   prev.addEventListener('click', function () { go(-1); });
   next.addEventListener('click', function () { go(1); });
   document.addEventListener('keydown', function (e) {
-    if (e.target && e.target.tagName === 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return; // slider keys
+    var tag = e.target && e.target.tagName, k = e.key;
+    if (tag === 'INPUT') return;                                   // the compare slider owns all its keys
+    if ((k === 'Enter' || k === ' ') && (tag === 'BUTTON' || tag === 'A')) return;   // let controls activate
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    var k = e.key;
     if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(1); }
     else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); go(-1); }
     else if (k === 'Home') { show(0); } else if (k === 'End') { show(n - 1); }
@@ -332,8 +345,10 @@ a { color: inherit; }
     if (navigator.clipboard) { navigator.clipboard.writeText(t).then(done, function () {}); }
   });
 
-  var h = parseInt((location.hash || '').slice(1), 10);
-  show(isNaN(h) ? 0 : h - 1, false);
+  function fromHash() { var h = parseInt((location.hash || '').slice(1), 10); show(isNaN(h) ? 0 : h - 1, false); }
+  window.addEventListener('hashchange', fromHash);
+  window.addEventListener('popstate', fromHash);
+  fromHash();
   var hint = document.getElementById('hint');
   setTimeout(function () { hint.classList.add('show'); }, 600);
   setTimeout(function () { hint.classList.remove('show'); }, 4500);

@@ -79,3 +79,30 @@ def test_bad_local_dir(tmp_path):
 def test_bundle_declares_shader_data_dir():
     xml = open(os.path.join(ROOT, "bundle_info.xml")).read()
     assert "<DataDir>shaders</DataDir>" in xml
+
+
+def test_truncated_download_runs_nothing(tmp_path):
+    """`curl | sh` of a cut-off script must not execute any install step."""
+    text = open(SCRIPT).read()
+    cut = tmp_path / "partial.sh"
+    cut.write_text(text[: len(text) // 2])          # cut mid-way through the function definitions
+    r = subprocess.run(["sh", str(cut)], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    assert "==>" not in r.stdout and "==>" not in r.stderr
+
+
+def test_help_works_when_piped():
+    r = subprocess.run("cat '%s' | sh -s -- --help" % SCRIPT, shell=True, capture_output=True, text=True)
+    assert r.returncode == 0 and "--build-only" in r.stdout
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS app-bundle discovery")
+def test_newest_chimerax_app_wins_numerically(tmp_path):
+    """ChimeraX-1.100 is newer than ChimeraX-1.99 even though it sorts earlier as text."""
+    for ver in ("1.99", "1.100"):
+        exe = tmp_path / "Applications" / ("ChimeraX-%s.app" % ver) / "Contents" / "MacOS" / "ChimeraX"
+        exe.parent.mkdir(parents=True)
+        exe.write_text('#!/bin/sh\nif [ "$1" = "--version" ]; then echo "UCSF ChimeraX version: %s (2030-01-01)"; fi\n' % ver)
+        exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
+    r = _run("--dry-run", "--local", ROOT, env={"HOME": str(tmp_path), "PATH": "/usr/bin:/bin"})
+    assert r.returncode == 0, r.stderr
+    assert "ChimeraX-1.100.app" in r.stdout

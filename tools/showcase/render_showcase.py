@@ -160,7 +160,8 @@ def main(session):
         R("surface /A enclose /A; color /A #7d8db0 target s; transparency /A 72 target s")
         R("show /B atoms; style /B stick; size /B stickRadius 0.22")
         R("view /A,B pad 0.35")
-        s = [m for m in session.models.list() if hasattr(m, "atoms")][0]
+        from chimerax.atomic import AtomicStructure
+        s = [m for m in session.models.list() if isinstance(m, AtomicStructure)][0]
         pep = s.atoms[s.atoms.chain_ids == "B"]
         prot = s.atoms[s.atoms.chain_ids == "A"]
         base = pep.coords.copy()
@@ -170,11 +171,6 @@ def main(session):
         R("chimenodes preset mn_default ao 1 glow 1.4 bloomRadius 0.32 tonemap agx exposure 0.25 vignette 0.3")
         glow.set_glow(session, pep, 1.6, (0.49, 1.0, 0.69))
         R("view /A,B pad 0.3; zoom 1.2")
-        # bound still
-        save_jpg(shot(1600, 1000, 3), "mdm2_bound.jpg")
-        # off still (stock look) for comparison
-        R("chimenodes off")
-        save_jpg(shot(1600, 1000, 2), "mdm2_stock.jpg")
         R("chimenodes preset mn_default ao 1 glow 1.4 bloomRadius 0.32 tonemap agx exposure 0.25 vignette 0.3")
         # animation: the p53 peptide approaches the MDM2 pocket, glow intensifies as it docks
         n_in, n_hold = 54, 12
