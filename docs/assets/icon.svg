@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="chimenodes icon: a mip chain of nested rounded squares in amber on a warm black ground">
+  <rect width="512" height="512" rx="112" fill="#120C08"/>
+  <rect x="48" y="48" width="416" height="416" rx="72" fill="#2A180C"/>
+  <rect x="96" y="96" width="320" height="320" rx="56" fill="#55290F"/>
+  <rect x="144" y="144" width="224" height="224" rx="40" fill="#A3501A"/>
+  <rect x="192" y="192" width="128" height="128" rx="24" fill="#FFB86B"/>
+  <rect x="224" y="224" width="64" height="64" rx="12" fill="#FFF3E2"/>
+</svg>

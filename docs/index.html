@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>chimenodes: MolecularNodes-style rendering for ChimeraX</title>
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<meta name="theme-color" content="#120C08">
 <meta name="description" content="Shaders for ChimeraX: glowing ligands in binding pockets and binders docked to their targets, rendered in UCSF ChimeraX with chimenodes.">
 <meta property="og:title" content="chimenodes: Shaders for ChimeraX">
 <meta property="og:description" content="MolecularNodes-style rendering and glow for UCSF ChimeraX.">
@@ -17,12 +20,12 @@
   font-display: swap;
 }
 :root {
-  --bg: #05060a;
-  --panel: rgba(12, 14, 22, .72);
-  --line: rgba(255, 255, 255, .12);
-  --text: #eef0f6;
-  --muted: #9aa1b5;
-  --accent: #ffa02e;
+  --bg: #120C08;
+  --panel: rgba(18, 12, 8, .78);
+  --line: rgba(255, 184, 107, .16);
+  --text: #FFF3E2;
+  --muted: #B9A08A;
+  --accent: #FFB86B;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -53,6 +56,7 @@ a { color: inherit; }
 .pdb .dot { display: inline-block; width: .32em; height: .32em; border-radius: 50%;
   background: var(--glow, var(--accent)); margin-right: .45em; vertical-align: .14em;
   box-shadow: 0 0 .6em .08em var(--glow, var(--accent)); }
+.pdb .mark { width: 1.05em; height: 1.05em; margin-right: .4em; vertical-align: -.14em; display: inline-block; }
 .what { color: var(--muted); font-weight: 500; font-size: clamp(13px, 1.35vw, 17px); }
 .what b { color: var(--text); font-weight: 600; }
 
@@ -60,7 +64,7 @@ a { color: inherit; }
 .stage { position: relative; min-height: 0; display: grid; place-items: center; padding: 12px 0; }
 .frame { position: relative; max-width: 100%; max-height: 100%; aspect-ratio: 16 / 10;
   height: 100%; border-radius: 14px; overflow: hidden; border: 1px solid var(--line);
-  background: #000; box-shadow: 0 30px 80px -30px rgba(0,0,0,.9); }
+  background: #120C08; box-shadow: 0 30px 80px -30px rgba(0,0,0,.9); }
 .frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 @supports not (aspect-ratio: 1) { .frame { width: 100%; } }
 
@@ -83,7 +87,7 @@ a { color: inherit; }
 /* footer: commands + nav */
 .foot { display: flex; align-items: center; gap: 16px; padding: 10px 0 max(14px, env(safe-area-inset-bottom)); min-height: 64px; }
 .cmds { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.cmds code { font-family: var(--mono); font-size: clamp(11px, 1.05vw, 13.5px); color: #d7dbea; background: rgba(255,255,255,.06);
+.cmds code { font-family: var(--mono); font-size: clamp(11px, 1.05vw, 13.5px); color: #F3DEC6; background: rgba(255,184,107,.07);
   border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .cmds code::before { content: "> "; color: var(--accent); }
 .count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500; white-space: nowrap; }
@@ -95,7 +99,7 @@ a { color: inherit; }
 .copy p { color: var(--muted); font-size: clamp(15px, 1.6vw, 20px); line-height: 1.55; max-width: 62ch; margin: 0 0 14px; }
 .copy p b { color: var(--text); font-weight: 600; }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; padding: 0; list-style: none; counter-reset: s; }
-.steps li { counter-increment: s; background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+.steps li { counter-increment: s; background: rgba(255,184,107,.05); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
   font-size: 14.5px; line-height: 1.45; color: var(--muted); }
 .steps li b { display: block; color: var(--text); font-weight: 650; margin-bottom: 4px; font-size: 15.5px; }
 .steps li::before { content: counter(s, decimal-leading-zero); display: block; color: var(--accent); font-weight: 700; font-size: 12px; letter-spacing: .1em; margin-bottom: 6px; }
@@ -107,7 +111,7 @@ a { color: inherit; }
 .hero .heroimg { position: absolute; inset: 0; }
 .hero .heroimg img { width: 100%; height: 100%; object-fit: cover; }
 .hero .heroimg::after { content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(5,6,10,.92) 0%, rgba(5,6,10,.55) 42%, rgba(5,6,10,0) 75%), linear-gradient(0deg, rgba(5,6,10,.8), rgba(5,6,10,0) 35%); }
+  background: linear-gradient(90deg, rgba(18,12,8,.92) 0%, rgba(18,12,8,.55) 42%, rgba(18,12,8,0) 75%), linear-gradient(0deg, rgba(18,12,8,.82), rgba(18,12,8,0) 35%); }
 .hero .copy { position: absolute; left: clamp(16px, 3.2vw, 48px); bottom: 12vh; margin: 0; z-index: 2; width: min(720px, 90vw); }
 .hero .foot { position: absolute; left: clamp(16px, 3.2vw, 48px); right: clamp(16px, 3.2vw, 48px); bottom: 0; z-index: 3; }
 
@@ -121,17 +125,17 @@ a { color: inherit; }
 
 /* install */
 .install { display: flex; gap: 8px; align-items: stretch; margin: 18px 0 8px; max-width: 920px; }
-.install code { flex: 1; font-family: var(--mono); font-size: clamp(12px, 1.3vw, 16px); background: rgba(255,255,255,.06); border: 1px solid var(--line);
+.install code { flex: 1; font-family: var(--mono); font-size: clamp(12px, 1.3vw, 16px); background: rgba(255,184,107,.07); border: 1px solid var(--line);
   border-radius: 12px; padding: 14px 16px; overflow-x: auto; white-space: nowrap; }
 .install code::before { content: "$ "; color: var(--accent); }
-.btn { font: inherit; font-weight: 650; font-size: 14px; color: #1a1306; background: var(--accent); border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer; }
+.btn { font: inherit; font-weight: 650; font-size: 14px; color: #2A180C; background: var(--accent); border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer; }
 .btn:focus-visible, .nav button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
 /* nav */
 .nav { position: fixed; right: clamp(12px, 2.4vw, 32px); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 10; display: flex; gap: 8px; align-items: center; }
 .nav button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text);
   font-size: 18px; cursor: pointer; backdrop-filter: blur(10px); display: grid; place-items: center; }
-.nav button:hover { background: rgba(255,255,255,.14); }
+.nav button:hover { background: rgba(255,184,107,.16); }
 .nav button[disabled] { opacity: .35; cursor: default; }
 .nav .count { margin-right: 6px; }
 .progress { position: fixed; left: 0; top: 0; height: 3px; background: var(--accent); z-index: 11; transition: width .35s ease; box-shadow: 0 0 10px var(--accent); }
@@ -159,7 +163,7 @@ a { color: inherit; }
   <!-- 1. title -->
   <section class="slide hero" data-title="chimenodes">
     <div class="heroimg"><img src="assets/hero.jpg" alt="A glowing ligand inside a translucent protein pocket, rendered in ChimeraX"></div>
-    <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div></header>
+    <header class="tag"><div class="pdb"><img class="mark" src="assets/icon.svg" alt="">chimenodes</div></header>
     <div class="copy">
       <h1>Shaders for<br>ChimeraX.</h1>
       <p><b>MolecularNodes-style rendering for UCSF ChimeraX.</b> Soft ambient occlusion, satin materials, filmic tone mapping and per-atom emission with bloom, all in real time and in every <code>save image</code> and <code>movie record</code>.</p>
@@ -168,7 +172,7 @@ a { color: inherit; }
   </section>
 
   <!-- 2. 3ERT -->
-  <section class="slide" data-title="3ERT" style="--glow:#ffa02e">
+  <section class="slide" data-title="3ERT" style="--glow:#FFB86B">
     <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>Estrogen receptor α</b> · 4-hydroxytamoxifen (OHT)</div></header>
     <div class="stage"><div class="frame cmp" style="--p:50%">
       <img data-src="assets/er_stock.jpg" alt="3ERT in the default ChimeraX renderer">
@@ -176,7 +180,7 @@ a { color: inherit; }
       <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
       <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
     </div></div>
-    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow :OHT strength 3 color #ffa02e</code></div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow :OHT strength 3 color #ffb86b</code></div></div>
   </section>
 
   <!-- 3. 1STP -->
@@ -228,7 +232,7 @@ a { color: inherit; }
   </section>
 
   <!-- 7. gallery -->
-  <section class="slide" data-title="Effects" style="--glow:#ffa02e">
+  <section class="slide" data-title="Effects" style="--glow:#FFB86B">
     <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>One scene, eight looks</b> · each stage of the pipeline</div></header>
     <div class="stage"><div class="grid">
       <figure class="tile"><img data-src="assets/gallery_stock.jpg" alt=""><figcaption>ChimeraX default</figcaption></figure>
@@ -245,7 +249,7 @@ a { color: inherit; }
 
   <!-- 8. how it works -->
   <section class="slide" data-title="How it works">
-    <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>How it works</b></div></header>
+    <header class="tag"><div class="pdb"><img class="mark" src="assets/icon.svg" alt="">chimenodes</div><div class="what"><b>How it works</b></div></header>
     <div class="copy">
       <h2>A post-process chain on top of ChimeraX's own renderer.</h2>
       <p>The scene is drawn once into a floating-point buffer, glowing atoms are drawn again as pure emission (surfaces dim it, cartoons stay dark), and a short chain of fullscreen passes finishes the frame. A pass whose effect is off is skipped (with every effect off, stock ChimeraX renders untouched), and a failing pass disables itself without breaking rendering.</p>
@@ -263,7 +267,7 @@ a { color: inherit; }
 
   <!-- 9. install -->
   <section class="slide" data-title="Install">
-    <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>Install</b></div></header>
+    <header class="tag"><div class="pdb"><img class="mark" src="assets/icon.svg" alt="">chimenodes</div><div class="what"><b>Install</b></div></header>
     <div class="copy">
       <h2>One line. No Python setup.</h2>
       <p>The installer finds ChimeraX, then builds and installs the bundle with ChimeraX's own bundled Python, so you don't need system Python, uv, pixi or git.</p>

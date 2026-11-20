@@ -1,4 +1,4 @@
-# chimenodes
+<h1><img src="docs/assets/icon.svg" alt="" width="40" align="center">&nbsp;chimenodes</h1>
 
 A ChimeraX bundle that emulates the look of [MolecularNodes](https://github.com/BradyAJohnston/MolecularNodes).
 

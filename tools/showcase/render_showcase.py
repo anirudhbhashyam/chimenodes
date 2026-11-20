@@ -24,7 +24,7 @@ SRC = os.environ.get("CHIMENODES_SRC") or os.path.join(ROOT, "src")
 WANT = [s for s in (os.environ.get("CHIMENODES_SCENES") or "er,sav,abl,barn,rbd,gallery").split(",") if s]
 os.makedirs(OUT, exist_ok=True)
 REPORT = {"scenes": {}}
-BG = "#04050a"
+BG = "#120C08"   # matches the docs theme
 
 
 def main(session):
@@ -107,8 +107,8 @@ def main(session):
 
     @scene("er")
     def _():
-        pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffa02e", 3, 9)
-        render_pair("er", ":OHT", "#ffa02e", 3)
+        pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffb86b", 3, 9)
+        render_pair("er", ":OHT", "#ffb86b", 3)
         # hero banner
         save_jpg(shot(2400, 1200, 3), "hero.jpg", 88)
         return {}
@@ -127,7 +127,7 @@ def main(session):
 
     @scene("gallery")
     def _():
-        pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffa02e", 3, 9)
+        pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffb86b", 3, 9)
         variants = [
             ("stock", "ChimeraX default", "chimenodes off"),
             ("look", "MN look (AO + satin)", "chimenodes preset mn_default glow 0 ao 1"),
@@ -143,7 +143,7 @@ def main(session):
             R("chimenodes off")
             R(command)
             if key != "stock":
-                R("chimenodes glow :OHT strength 3 color #ffa02e")
+                R("chimenodes glow :OHT strength 3 color #ffb86b")
                 if key in ("look", "agx", "outline"):
                     R("chimenodes glow 0")
             save_jpg(shot(900, 560, 2), "gallery_%s.jpg" % key, 88)
