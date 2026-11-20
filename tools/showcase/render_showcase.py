@@ -40,19 +40,27 @@ def main(session):
     from PIL import Image
     cmd.register_commands(session.logger)
     view = session.main_view
+    try:
+        import chimerax.core
+        from chimerax.chimenodes import __version__ as cn_version
+        REPORT["chimerax"] = getattr(chimerax.core, "version", "?")
+        REPORT["chimenodes"] = cn_version
+    except Exception:
+        pass
 
     def R(c):
         return run(session, c, log=False)
 
-    def save_jpg(img, name, q=92):
-        Image.fromarray(img[..., :3].astype("uint8")).save(os.path.join(OUT, name), quality=q, optimize=True)
+    def save_png(img, name):
+        # Lossless: JPEG (even 4:4:4) leaves visible blocks on the smooth tinted gradients.
+        Image.fromarray(img[..., :3].astype("uint8")).save(os.path.join(OUT, name), optimize=True)
 
     def shot(w, h, ss=3):
         R("wait 2")
         return view.image_rgba(w, h, supersample=ss)
 
     def clean():
-        for c in ("chimenodes off", "chimenodes reset", "close", "lighting default",
+        for c in ("chimenodes off", "chimenodes reset", "close", "lighting default", "material default",
                   "graphics silhouettes false", "set bgColor %s" % BG):
             try:
                 R(c)
@@ -78,6 +86,7 @@ def main(session):
         return deco
 
     # Hero look shared by all stills
+    SPEC = 0.0    # no specular on the translucent surface: even 0.08 leaves blocky pale glints (MN look default is 0.4)
     LOOK = "chimenodes preset mn_default ao 1 glow 0.7 bloomRadius 0.25 tonemap agx exposure 0.25 vignette 0.3"
 
     def pocket_scene(pdb, chain, ligand, protein_hex, ligand_hex, strength, slab, extra=""):
@@ -99,25 +108,36 @@ def main(session):
     def render_pair(key, glow_spec, glow_hex, strength, w=2560, h=1600, light=None):
         # stock
         R("chimenodes off")
-        save_jpg(shot(w, h, 2), "%s_stock.jpg" % key)
+        # Specular hot-spots on the 72%-transparent surface blend with the warm BG and read as
+        # yellow/orange blotches; the stock look has no need for specular, so switch it off here.
+        R("material specularReflectivity 0")
+        save_png(shot(w, h, 2), "%s_stock.png" % key)
+        R("material default")
         # chimenodes
         R(LOOK)
         R("chimenodes glow %s strength %s color %s" % (glow_spec, strength, glow_hex))
         if light is not None:
             R("chimenodes glowLight %s" % light)
-        save_jpg(shot(w, h, 3), "%s_mn.jpg" % key)
+        # Every chimenodes command re-applies the MN look's material (specular 0.4), so set this
+        # last, right before the shot, to soften hot-spots on the translucent surface.
+        R("material specularReflectivity %s" % SPEC)
+        save_png(shot(w, h, 3), "%s_mn.png" % key)
 
     @scene("er")
     def _():
         pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffb86b", 3, 9)
         render_pair("er", ":OHT", "#ffb86b", 1.5)
         # hero banner
-        save_jpg(shot(3200, 1600, 3), "hero.jpg", 90)
+        hero = shot(3200, 1600, 3)
+        save_png(hero, "hero.png")
+        # small social-card image (link previews should not pull the multi-MB hero)
+        Image.fromarray(hero[..., :3].astype("uint8")).resize((1200, 600), Image.LANCZOS).save(
+            os.path.join(OUT, "og.png"), optimize=True)
         return {}
 
     @scene("sav")
     def _():
-        pocket_scene("1stp", "A", "BTN", "#8a96b8", "#2fe3ff", 3, 8)
+        pocket_scene("1stp", "A", "BTN", "#8a96b8", "#2fe3ff", 3, 7)   # slab 8 left a stray surface fragment (hexagon) in the background
         render_pair("sav", ":BTN", "#2fe3ff", 1.5)
         return {}
 
@@ -148,7 +168,10 @@ def main(session):
                 R("chimenodes glow :OHT strength 1.5 color #ffb86b")
                 if key in ("look", "agx", "outline"):
                     R("chimenodes glow 0")
-            save_jpg(shot(1280, 800, 2), "gallery_%s.jpg" % key, 90)
+            R("material specularReflectivity %s" % (0 if key == "stock" else SPEC))   # after the last chimenodes command
+            save_png(shot(1280, 800, 2), "gallery_%s.png" % key)
+            if key == "stock":
+                R("material default")
             meta.append({"key": key, "label": label, "command": command})
         return {"variants": meta}
 
