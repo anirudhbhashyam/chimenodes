@@ -31,7 +31,7 @@ This finds ChimeraX (or use `--exe PATH` / `CHIMERAX_EXE`) and runs
     chimenodes off | on | toggle | reset | info
     chimenodes export blender ~/out/prot.cif
 
-Keywords: `glow bloomRadius bloomThreshold bloomKnee exposure tonemap(none|aces|filmic|agx)
+Keywords: `glow bloomRadius bloomThreshold bloomKnee glowLight glowLightRadius exposure tonemap(none|aces|filmic|agx)
 ao aoRadius rim dof aperture focus outline vignette grain fxaa quality(draft|normal|high)`.
 Values are clamped to valid ranges. `chimenodes preset save|delete|list NAME` manages presets.
 

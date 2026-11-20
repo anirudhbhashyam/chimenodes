@@ -11,6 +11,8 @@ QUALITIES = ("draft", "normal", "high")
 RANGES = {
     "glow": (0.0, 5.0),
     "bloom_radius": (0.0, 1.0),
+    "glow_light": (0.0, 3.0),
+    "glow_light_radius": (0.0, 60.0),
     "bloom_threshold": (0.0, 4.0),
     "bloom_knee": (0.0, 1.0),
     "exposure": (-5.0, 5.0),
@@ -37,6 +39,8 @@ class Params:
     bloom_radius: float = 0.3  # fraction of image height
     bloom_threshold: float = 1.0
     bloom_knee: float = 0.5
+    glow_light: float = 0.0    # glowing atoms light nearby surfaces (0 = off)
+    glow_light_radius: float = 0.0  # scene units (Angstrom); 0 = auto (6)
     # Tone / film
     tonemap: str = "none"
     exposure: float = 0.0      # EV
@@ -78,6 +82,6 @@ class Params:
 
     def any_post_effect(self) -> bool:
         return self.enabled and (
-            self.glow > 0 or self.tonemap != "none" or self.exposure != 0
+            self.glow > 0 or self.glow_light > 0 or self.tonemap != "none" or self.exposure != 0
             or self.vignette > 0 or self.grain > 0 or self.dof > 0
             or self.outline > 0 or self.fxaa or self.ao > 0 or self.rim > 0)

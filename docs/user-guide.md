@@ -21,8 +21,14 @@
 
 ## Options
 Ranges are clamped: glow 0-5, bloomRadius 0-1 (fraction of image height), bloomThreshold 0-4,
-bloomKnee 0-1, exposure -5..5 EV, ao/rim/dof/aperture/outline/vignette/grain 0-1, aoRadius 0.01-5.
+bloomKnee 0-1, glowLight 0-3 (0 = off), glowLightRadius 0-60 Angstrom (0 = auto, 6), exposure -5..5 EV, ao/rim/dof/aperture/outline/vignette/grain 0-1, aoRadius 0.01-5.
 `focus ATOMSPEC` sets the DOF focal distance from the current camera to those atoms.
+
+## Glow light
+`glowLight F` (default 0.6 in the mn_default, neon and cinematic presets) makes glowing atoms
+(`chimenodes glow ATOMSPEC ...`) act as point lights that illuminate and tint nearby surfaces;
+`glowLightRadius R` sets the reach in Angstrom (0 = auto). It is a screen-space pass: it lights
+only the nearest visible surface, and there are no shadows. With no glowing atoms it has no effect.
 
 ## Panel
 Open the Chimenodes tool (GUI only) for sliders, a preset menu and an enable checkbox.

@@ -49,7 +49,7 @@ def register_pass(order: int, pass_obj: Any) -> None:
 
 def _collect_module_passes(log=None):
     out: List[Tuple[int, Any]] = []
-    for modname in ("look", "glow", "lens"):
+    for modname in ("look", "glow", "lens", "glowlight"):
         try:
             mod = __import__(__package__ + "." + modname if __package__ else modname,
                              fromlist=["make_passes"])

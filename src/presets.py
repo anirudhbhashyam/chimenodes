@@ -15,19 +15,19 @@ except ImportError:  # plain-python usage / tests importing the module directly
 # preset never turns the effect on or off by itself (cmd.py decides that).
 BUILTIN: Dict[str, Dict[str, Any]] = {
     # MolecularNodes look: AO in albedo, satin shading, AgX, no bloom/DOF.
-    "mn_default": dict(ao=0.8, ao_radius=0.5, rim=0.25, tonemap="agx", exposure=0.0,
+    "mn_default": dict(glow_light=0.6, ao=0.8, ao_radius=0.5, rim=0.25, tonemap="agx", exposure=0.0,
                        glow=0.0, dof=0.0, outline=0.0, vignette=0.0, grain=0.0,
                        fxaa=True),
-    "neon": dict(ao=0.5, ao_radius=0.5, rim=0.6, tonemap="filmic", exposure=0.3,
+    "neon": dict(glow_light=0.6, ao=0.5, ao_radius=0.5, rim=0.6, tonemap="filmic", exposure=0.3,
                  glow=1.5, bloom_radius=0.35, bloom_threshold=0.7, bloom_knee=0.5,
                  vignette=0.25, fxaa=True),
-    "cinematic": dict(ao=0.8, ao_radius=0.6, rim=0.35, tonemap="agx", exposure=0.0,
+    "cinematic": dict(glow_light=0.6, ao=0.8, ao_radius=0.6, rim=0.35, tonemap="agx", exposure=0.0,
                       glow=0.6, bloom_radius=0.3, bloom_threshold=1.0, dof=0.45,
                       aperture=0.4, vignette=0.4, grain=0.12, fxaa=True),
-    "clean": dict(ao=0.6, ao_radius=0.4, rim=0.1, tonemap="none", exposure=0.0,
+    "clean": dict(glow_light=0.0, ao=0.6, ao_radius=0.4, rim=0.1, tonemap="none", exposure=0.0,
                   glow=0.0, dof=0.0, outline=0.0, vignette=0.0, grain=0.0,
                   fxaa=True),
-    "inspect": dict(ao=0.3, ao_radius=0.3, rim=0.0, tonemap="none", exposure=0.0,
+    "inspect": dict(glow_light=0.0, ao=0.3, ao_radius=0.3, rim=0.0, tonemap="none", exposure=0.0,
                     glow=0.0, dof=0.0, outline=0.6, vignette=0.0, grain=0.0,
                     fxaa=True),
 }

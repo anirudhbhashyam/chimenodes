@@ -4,6 +4,7 @@ from __future__ import annotations
 from .params import Params, RANGES, TONEMAPS, QUALITIES
 
 SLIDERS = [("glow", "Glow"), ("bloom_radius", "Bloom radius"), ("bloom_threshold", "Bloom threshold"),
+           ("glow_light", "Glow light"),
            ("exposure", "Exposure"), ("ao", "AO"), ("rim", "Rim"), ("dof", "DOF"),
            ("outline", "Outline"), ("vignette", "Vignette"), ("grain", "Grain")]
 STEPS = 1000

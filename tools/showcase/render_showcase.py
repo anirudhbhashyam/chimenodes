@@ -96,13 +96,15 @@ def main(session):
         R("clip near -%s far %s position :%s" % (slab, slab, ligand))
         return ligand_hex
 
-    def render_pair(key, glow_spec, glow_hex, strength, w=2560, h=1600):
+    def render_pair(key, glow_spec, glow_hex, strength, w=2560, h=1600, light=None):
         # stock
         R("chimenodes off")
         save_jpg(shot(w, h, 2), "%s_stock.jpg" % key)
         # chimenodes
         R(LOOK)
         R("chimenodes glow %s strength %s color %s" % (glow_spec, strength, glow_hex))
+        if light is not None:
+            R("chimenodes glowLight %s" % light)
         save_jpg(shot(w, h, 3), "%s_mn.jpg" % key)
 
     @scene("er")
@@ -186,13 +188,13 @@ def main(session):
     @scene("barn")
     def _():
         binder_scene("1brs", "A", "D", "#7d8db0", "#7dffb0", zoom=1.2)      # barnase (target) / barstar (binder)
-        render_pair("barn", "/D", "#7dffb0", 0.5)
+        render_pair("barn", "/D", "#7dffb0", 0.5, light=2.2)
         return {}
 
     @scene("rbd")
     def _():
         binder_scene("6m0j", "A", "E", "#7d8db0", "#b78cff", zoom=0.95)      # ACE2 (target) / SARS-CoV-2 RBD (binder)
-        render_pair("rbd", "/E", "#b78cff", 0.5)
+        render_pair("rbd", "/E", "#b78cff", 0.5, light=2.2)
         return {}
 
     clean()

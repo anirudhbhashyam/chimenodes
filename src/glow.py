@@ -29,6 +29,11 @@ except Exception:  # pragma: no cover - plain Python / circular import
         def run(self, ctx):
             raise NotImplementedError
 
+try:
+    from .emitters import cluster_lights  # type: ignore
+except Exception:  # pragma: no cover - plain Python
+    from emitters import cluster_lights  # type: ignore
+
 # Pass orders (low runs first). B's tonemap sits at 500 by convention.
 ORDER_EMISSION = 150
 ORDER_BLOOM = 200
@@ -290,6 +295,72 @@ def emission_gain(session):
     return g
 
 
+_LIGHT_VERSION = [0]
+_LIGHT_CACHE = {}
+
+
+def _model_visible(m):
+    while m is not None:
+        if getattr(m, "visible", True) is False:
+            return False
+        m = getattr(m, "parent", None)
+    return True
+
+
+def emitter_lights(session, max_lights=32):
+    """Point lights for glowing atoms: (positions float32 (N,3) scene coords, colours float32
+    (N,3) linear RGB), N <= max_lights, empty (0,3) arrays when nothing glows.
+
+    Per atom: strength>0, displayed, in a visible model. Colour = hue-only emission colour
+    (explicit glow colour else atom colour, via _hue_only) * strength, i.e. the same absolute
+    radiance the emission pass produces (drawn = hue*strength/gain, final = drawn*gain), so
+    relative brightness between objects is preserved. Positions are atoms.scene_coords.
+    Clustering: emitters.cluster_lights (voxel grid; intensity = max(strongest, sqrt(sum)),
+    capped at 4). The result is cached on a hash of the gathered emitters (cheap, vectorised)
+    plus max_lights; set_glow/clear_glow also bump a version that invalidates it.
+    """
+    import hashlib
+    import numpy as np
+    empty = (np.zeros((0, 3), np.float32), np.zeros((0, 3), np.float32))
+    if session is None:
+        return empty
+    ps, cs = [], []
+    for s in _structures(session):
+        d = getattr(s, _STORE, None)
+        if d is None or len(d["strength"]) != s.num_atoms or not _model_visible(s):
+            continue
+        sel = d["strength"] > 0
+        if not sel.any():
+            continue
+        atoms = s.atoms
+        try:
+            sel &= np.asarray(atoms.displays, bool)
+        except Exception:
+            pass
+        idx = np.nonzero(sel)[0]
+        if len(idx) == 0:
+            continue
+        a = atoms[idx]
+        base = atoms.colors[idx].astype(np.float32)[:, :3] / 255.0
+        c = np.where(d["has_color"][idx][:, None], d["color"][idx], base)
+        cs.append(_hue_only(c) * d["strength"][idx][:, None])
+        ps.append(np.asarray(a.scene_coords, np.float32))
+    if not ps:
+        _LIGHT_CACHE.clear()
+        return empty
+    pos = np.concatenate(ps).astype(np.float32)
+    col = np.concatenate(cs).astype(np.float32)
+    h = hashlib.blake2b(pos.tobytes(), digest_size=16)
+    h.update(col.tobytes())
+    key = (h.digest(), int(max_lights), _LIGHT_VERSION[0])
+    hit = _LIGHT_CACHE.get("k")
+    if hit is not None and hit[0] == key:
+        return hit[1]
+    res = cluster_lights(pos, col, int(max_lights))
+    _LIGHT_CACHE["k"] = (key, res)
+    return res
+
+
 def _entry(s):
     import numpy as np
     d = getattr(s, _STORE, None)
@@ -309,6 +380,7 @@ def set_glow(session, objects, strength, color=None):
     """
     import numpy as np
     _STATE.session = session
+    _LIGHT_VERSION[0] += 1
     _register_attrs(session)
     strength = max(0.0, float(strength))
     groups = []
@@ -354,6 +426,7 @@ def set_glow(session, objects, strength, color=None):
 
 def clear_glow(session, objects=None):
     """Remove emission from `objects` (all structures when None)."""
+    _LIGHT_VERSION[0] += 1
     if objects is None:
         for s in _structures(session):
             if getattr(s, _STORE, None) is not None:

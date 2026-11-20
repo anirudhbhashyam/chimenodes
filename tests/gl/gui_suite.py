@@ -415,6 +415,133 @@ def main(session):
         check(abs(img - img2).max() <= 1, "frame unstable after pass disabled")
         return {"disabled": disabled}
 
+    # ---- glow light (v1.0.1): glowing atoms tint nearby surfaces via a screen-space pass
+    def _glowlight_scene(on=True):
+        """Surface around the grid; first three atoms glow (our 'ligand'). Returns surface model."""
+        mid = scene["model"].id_string
+        run(session, "surface #%s enclose #%s" % (mid, mid), log=False)
+        if on:
+            run(session, "chimenodes glow #%s:1@C1,C2,C3 strength 3 color yellow" % mid, log=False)
+
+    def _glowlight_cleanup():
+        try:
+            from chimerax.chimenodes import glow as gm
+            gm.clear_glow(session)
+        except Exception:
+            pass
+        run(session, "surface close", log=False)
+        reset()
+
+    @case("glowlight_zero_equals_glow_only")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        _glowlight_scene()
+        try:
+            run(session, "chimenodes tonemap aces glow 1 glowLight 0", log=False)
+            a = render()
+            run(session, "chimenodes glowLight 1.5", log=False)
+            render()
+            run(session, "chimenodes glowLight 0", log=False)
+            b = render()
+            pipe = hook.get(session)
+            names = [getattr(p, "name", "") for p in pipe.active_passes()] if pipe else []
+        finally:
+            _glowlight_cleanup()
+        d = float(abs(a - b).max())
+        check("glowlight" not in names, "glowlight pass active at glowLight 0: %s" % names)
+        check(d == 0, "glowLight 0 differs from glow-only frame, max diff %s" % d)
+        return {"max_diff": d}
+
+    @case("glowlight_tints_nearby_surface")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        _glowlight_scene()
+        try:
+            run(session, "chimenodes tonemap aces glow 0.5 glowLight 0", log=False)
+            off = render()
+            run(session, "chimenodes glowLight 2", log=False)
+            on = render()
+            ok = hook.get(session) is not None
+            disabled = sorted(hook.get(session).disabled_passes) if ok else []
+        finally:
+            _glowlight_cleanup()
+        png(on, "glowlight_on")
+        check(ok and "glowlight" not in disabled, "glowlight pass died: %s" % disabled)
+        check(np.isfinite(on).all(), "NaN/inf with glow light")
+        diff = (on[..., :3] - off[..., :3]).mean(axis=2)
+        check(diff.max() > 2, "no pixel got brighter, max diff %.2f" % diff.max())
+        top = np.sort(diff.ravel())[-max(1, diff.size // 100):].mean()
+        k = 24
+        corners = [diff[:k, :k], diff[:k, -k:], diff[-k:, :k], diff[-k:, -k:]]
+        cmax = max(float(abs(c).mean()) for c in corners)
+        farthest = min(float(abs(c).mean()) for c in corners)
+        check(lum(on) > lum(off), "glow light did not add light overall")
+        check(farthest <= 1.0, "far-corner pixels changed: %.2f" % farthest)
+        check(top > 3 * max(farthest, 0.1), "lit region not distinct from far field: %.2f vs %.2f" % (top, farthest))
+        return {"top1pct_gain": round(float(top), 2), "corner_means_max": round(cmax, 2),
+                "corner_means_min": round(farthest, 2)}
+
+    @case("glowlight_failsafe_pass_error")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        from chimerax.chimenodes import glowlight as gl_mod
+        _glowlight_scene()
+        orig = gl_mod.GlowLight.run
+
+        def boom(self, ctx):
+            raise RuntimeError("boom")
+
+        gl_mod.GlowLight.run = boom
+        try:
+            run(session, "chimenodes tonemap aces glowLight 2", log=False)
+            img = render()
+            pipe = hook.get(session)
+            alive = pipe is not None
+            disabled = sorted(pipe.disabled_passes) if alive else []
+            img2 = render()
+        finally:
+            gl_mod.GlowLight.run = orig
+            _glowlight_cleanup()
+        check(alive, "failing glowlight pass took down the chain")
+        check("glowlight" in disabled, "glowlight not recorded as disabled: %s" % disabled)
+        check(np.isfinite(img).all() and abs(img - stock).mean() > 0, "remaining passes did not render")
+        check(abs(img - img2).max() <= 1, "frame unstable after glowlight disabled")
+        return {"disabled": disabled}
+
+    @case("glowlight_no_emitters_equals_look_only")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        from chimerax.chimenodes import glow as gm
+        gm.clear_glow(session)
+        try:
+            run(session, "chimenodes tonemap aces glowLight 0", log=False)
+            a = render()
+            run(session, "chimenodes glowLight 2", log=False)
+            b = render()
+            ok = hook.get(session) is not None
+        finally:
+            reset()
+        d = float(abs(a - b).max())
+        check(ok, "hook died with glowLight and no emitters")
+        check(d <= 1, "glowLight with no glowing objects changed the frame by %s" % d)
+        return {"max_diff": d}
+
+    @case("glowlight_session_roundtrip")
+    def _():
+        run(session, "chimenodes preset neon glowLight 1.7 glowLightRadius 12", log=False)
+        p = state.get_params(session)
+        check(abs(p.glow_light - 1.7) < 1e-6 and abs(p.glow_light_radius - 12) < 1e-6,
+              "command keywords not applied: %s %s" % (p.glow_light, p.glow_light_radius))
+        snap = state.snapshot_params(p)
+        reset()
+        restored = state.restore_params(snap)
+        check(abs(restored.glow_light - 1.7) < 1e-6, "state restore lost glow_light")
+        check(abs(restored.glow_light_radius - 12) < 1e-6, "state restore lost glow_light_radius")
+        old = {"version": 1, "params": {k: v for k, v in snap["params"].items()
+                                        if not k.startswith("glow_light")}}
+        check(state.restore_params(old).glow_light == 0.0, "v1.0.0 state did not default glow_light")
+        return {}
+
     report = {"ok": all(r["ok"] for r in RESULTS), "passed": sum(r["ok"] for r in RESULTS),
               "total": len(RESULTS), "cases": RESULTS}
     with open(os.path.join(OUT, "report.json"), "w") as f:

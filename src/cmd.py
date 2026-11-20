@@ -14,6 +14,8 @@ KEYWORDS = {
     "bloomRadius": "bloom_radius",
     "bloomThreshold": "bloom_threshold",
     "bloomKnee": "bloom_knee",
+    "glowLight": "glow_light",
+    "glowLightRadius": "glow_light_radius",
     "exposure": "exposure",
     "tonemap": "tonemap",
     "ao": "ao",
@@ -297,6 +299,7 @@ def register_commands(logger=None):
     kwd = [
         ("preset", StringArg), ("glow", FloatArg), ("bloomRadius", FloatArg),
         ("bloomThreshold", FloatArg), ("bloomKnee", FloatArg),
+        ("glowLight", FloatArg), ("glowLightRadius", FloatArg),
         ("exposure", FloatArg), ("tonemap", EnumOf(TONEMAPS)),
         ("ao", FloatArg), ("aoRadius", FloatArg), ("rim", FloatArg),
         ("dof", FloatArg), ("aperture", FloatArg), ("focus", AtomsArg),
