@@ -1,0 +1,13 @@
+# Dev tooling only. The bundle itself is built by ChimeraX from bundle_info.xml.
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+markers = ["gl: needs ChimeraX + an OpenGL context (skipped otherwise)"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "UP006", "UP007"]
+ignore = ["E501", "E402"]
