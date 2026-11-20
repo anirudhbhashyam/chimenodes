@@ -5,6 +5,21 @@ A ChimeraX bundle that emulates the look of [MolecularNodes](https://github.com/
 (bloom and per-object emission), depth of field, outline, FXAA, vignette and grain.
 Cross-platform: macOS, Windows, Linux (OpenGL 3.3 core, fragment shaders only).
 
+## Install (one line)
+
+Requires [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) >= 1.8. You do **not** need
+system Python, uv, pixi, git or a compiler: ChimeraX builds and installs the bundle with its own Python.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/<owner>/chimenodes/main/install.sh | sh
+```
+
+Options go after `sh -s --`, e.g. `... | sh -s -- --ref v0.1.0 --chimerax /path/to/ChimeraX`.
+`--uninstall` removes it, `--build-only` writes a wheel to `./dist`, `--local DIR` installs from a
+checkout, `--dry-run` shows what would happen. The script finds ChimeraX on macOS, Linux and Windows
+(Git Bash/WSL) and stops with download instructions if it is missing (the ChimeraX license must be
+accepted by you, so it is never downloaded automatically).
+
 ## Install
 Development (editable) install, any platform:
 

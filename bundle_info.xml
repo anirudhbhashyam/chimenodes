@@ -24,6 +24,10 @@
   </Dependencies>
 
 
+  <DataFiles>
+    <DataDir>shaders</DataDir>
+  </DataFiles>
+
   <Classifiers>
     <PythonClassifier>Development Status :: 3 - Alpha</PythonClassifier>
     <PythonClassifier>License :: OSI Approved :: MIT License</PythonClassifier>
