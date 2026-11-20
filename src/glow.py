@@ -311,7 +311,7 @@ def emitter_lights(session, max_lights=32):
     """Point lights for glowing atoms: (positions float32 (N,3) scene coords, colours float32
     (N,3) linear RGB), N <= max_lights, empty (0,3) arrays when nothing glows.
 
-    Per atom: strength>0, displayed, in a visible model. Colour = hue-only emission colour
+    Per atom: strength>0, displayed (or its residue's ribbon is), in a visible model. Colour = hue-only emission colour
     (explicit glow colour else atom colour, via _hue_only) * strength, i.e. the same absolute
     radiance the emission pass produces (drawn = hue*strength/gain, final = drawn*gain), so
     relative brightness between objects is preserved. Positions are atoms.scene_coords.
@@ -333,8 +333,14 @@ def emitter_lights(session, max_lights=32):
         if not sel.any():
             continue
         atoms = s.atoms
+        disp = np.ones(len(sel), bool)
+        rib = np.zeros(len(sel), bool)
         try:
-            sel &= np.asarray(atoms.displays, bool)
+            disp = np.asarray(atoms.displays, bool)
+            # cartoon-only residues have every atom hidden but still glow (emission pass recolours
+            # the ribbon), so a visible ribbon counts as visible too
+            rib = np.asarray(atoms.residues.ribbon_displays, bool)
+            sel &= disp | rib
         except Exception:
             pass
         idx = np.nonzero(sel)[0]
@@ -342,6 +348,13 @@ def emitter_lights(session, max_lights=32):
             continue
         a = atoms[idx]
         base = atoms.colors[idx].astype(np.float32)[:, :3] / 255.0
+        rc = (rib & ~disp)[idx]
+        if rc.any():
+            try:
+                rcol = np.asarray(a.residues.ribbon_colors, np.float32)[:, :3] / 255.0
+                base = np.where(rc[:, None], rcol, base)
+            except Exception:
+                pass
         c = np.where(d["has_color"][idx][:, None], d["color"][idx], base)
         cs.append(_hue_only(c) * d["strength"][idx][:, None])
         ps.append(np.asarray(a.scene_coords, np.float32))

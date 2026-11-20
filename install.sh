@@ -2,7 +2,7 @@
 # chimenodes installer: MolecularNodes-style rendering + glow for UCSF ChimeraX.
 #
 #   curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh | sh
-#   curl -fsSL <same url> | sh -s -- --ref v1.0.5
+#   curl -fsSL <same url> | sh -s -- --ref v1.0.6
 #
 # No system Python, uv, pixi, git or compiler is needed: the bundle is built and installed
 # by ChimeraX itself using ChimeraX's bundled Python. Requirements: ChimeraX >= 1.8, and

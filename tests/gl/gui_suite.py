@@ -526,6 +526,41 @@ def main(session):
         check(d <= 1, "glowLight with no glowing objects changed the frame by %s" % d)
         return {"max_diff": d}
 
+    @case("glowlight_cartoon_only_emits")
+    def _():
+        # Regression: glowing cartoon-only chains (all atoms hidden) must still act as lights.
+        from chimerax.chimenodes import glow as gm
+        from chimerax.atomic import AtomicStructure
+        before = set(id(m) for m in session.models.list())
+        try:
+            run(session, "open 1stp", log=False)
+        except Exception as e:  # offline and not cached
+            return {"skipped": "could not open 1stp: %s" % str(e)[:60]}
+        new = [m for m in session.models.list() if isinstance(m, AtomicStructure) and id(m) not in before]
+        check(new, "1stp did not open")
+        mid = new[0].id_string
+        try:
+            run(session, "hide #%s; show #%s cartoons" % (mid, mid), log=False)
+            run(session, "chimenodes glow #%s/A strength 1 color cyan" % mid, log=False)
+            pos, col = gm.emitter_lights(session, 32)
+            n_cartoon = len(pos)
+            run(session, "chimenodes glow #%s/A strength 1 color cyan" % mid, log=False)
+            run(session, "hide #%s cartoons; show #%s atoms" % (mid, mid), log=False)
+            pos2, _c = gm.emitter_lights(session, 32)
+            run(session, "hide #%s atoms; hide #%s cartoons" % (mid, mid), log=False)
+            pos3, _c = gm.emitter_lights(session, 32)
+        finally:
+            try:
+                gm.clear_glow(session)
+            except Exception:
+                pass
+            run(session, "close #%s" % mid, log=False)
+            reset()
+        check(n_cartoon > 0, "glowing cartoon-only chain produced no lights")
+        check(len(pos2) > 0, "glowing atoms produced no lights")
+        check(len(pos3) == 0, "hidden glowing residues still produced lights: %d" % len(pos3))
+        return {"cartoon_lights": int(n_cartoon), "atom_lights": int(len(pos2))}
+
     @case("glowlight_session_roundtrip")
     def _():
         run(session, "chimenodes preset neon glowLight 1.7 glowLightRadius 12", log=False)
