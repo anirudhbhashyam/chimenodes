@@ -222,6 +222,25 @@ def main(session):
         check(abs(cleared - img).mean() > 0, "glow clear did not change the image")
         return {"lum_base": round(lum(base), 2), "lum_glow": round(lum(img), 2)}
 
+    @case("glow_independent_of_albedo_brightness")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        m = scene["model"]
+        gains = {}
+        for label, colr in (("light", "white"), ("dark", "#101a3a")):
+            run(session, "color #1 %s" % colr, log=False)
+            run(session, "chimenodes tonemap none", log=False)
+            base = render()
+            run(session, "chimenodes glow #1 strength 1; chimenodes glow 1", log=False)
+            img = render()
+            run(session, "chimenodes glow clear", log=False)
+            reset()
+            gains[label] = lum(img) - lum(base)
+        run(session, "color #1 skyblue", log=False)
+        check(gains["light"] > 1 and gains["dark"] > 0.5 * gains["light"],
+              "dark colours glow much weaker than light ones: %s" % gains)
+        return {k: round(v, 2) for k, v in gains.items()}
+
     @case("resolution_consistency_2x")
     def _():
         run(session, "chimenodes preset mn_default", log=False)

@@ -225,6 +225,15 @@ def has_glow_objects(session):
     return False
 
 
+def _hue_only(rgb):
+    """Scale colours so the brightest channel is 1: dark chains glow as strongly as light ones
+    (Blender-style emission colour with a separate strength)."""
+    import numpy as np
+    rgb = np.asarray(rgb, np.float32)
+    m = rgb.max(axis=1, keepdims=True)
+    return np.where(m > 1e-4, rgb / np.maximum(m, 1e-4), 1.0).astype(np.float32)
+
+
 def emission_gain(session):
     """Max glow strength over all structures (>=1); emission textures are divided by this."""
     g = 1.0
@@ -333,6 +342,7 @@ def emission_scope(session):
             saved.append((s, atoms.colors.copy(), res.ribbon_colors.copy()))
             base = atoms.colors.astype(np.float32) / 255.0
             col = np.where(d["has_color"][:, None], d["color"], base[:, :3])
+            col = _hue_only(col)  # glow brightness comes from strength, not from albedo
             out = np.zeros((len(atoms), 4), np.float32)
             out[:, :3] = col * (d["strength"][:, None] / gain)
             out[:, 3] = 1.0
@@ -343,7 +353,7 @@ def emission_scope(session):
             ok = ridx >= 0
             np.maximum.at(rs, ridx[ok], d["strength"][ok] / gain)
             rc = res.ribbon_colors.astype(np.float32)
-            rc[:, :3] *= rs[:, None]
+            rc[:, :3] = _hue_only(rc[:, :3] / 255.0) * 255.0 * rs[:, None]
             res.ribbon_colors = np.clip(rc + 0.5, 0, 255).astype(np.uint8)
         lighting.key_light_intensity = 0.0
         lighting.fill_light_intensity = 0.0
