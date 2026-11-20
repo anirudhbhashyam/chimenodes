@@ -46,3 +46,9 @@ leaves rendering stock and logs a warning.
 - Stereo, 360 and VR cameras and OpenGL recording bypass chimenodes.
 - Per-object glow re-renders the scene once, roughly doubling frame cost while glow is active.
 - Transparent surfaces do not write depth, so depth of field and outline ignore them.
+
+## Glow selection
+
+`chimenodes glow ATOMSPEC strength S [color C]` marks only the atoms in the spec (e.g. `:OHT`, `/B`,
+`#1:12@C1,C2`). Surfaces (including translucent ones) are drawn black in the emission pass, so they dim
+glow behind them instead of adding colour. `chimenodes glow clear` removes all emission.

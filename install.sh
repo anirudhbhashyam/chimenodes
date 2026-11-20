@@ -23,7 +23,7 @@
 
 set -eu
 
-DEFAULT_REPO=""   # set to e.g. https://github.com/<owner>/chimenodes once published
+DEFAULT_REPO="https://github.com/anirudhbhashyam/chimenodes"
 BUNDLE_NAME="ChimeraX-Chimenodes"
 MIN_MAJOR=1
 MIN_MINOR=8

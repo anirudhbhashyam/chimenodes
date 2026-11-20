@@ -234,6 +234,34 @@ def _hue_only(rgb):
     return np.where(m > 1e-4, rgb / np.maximum(m, 1e-4), 1.0).astype(np.float32)
 
 
+def _blacken_surfaces(session, saved):
+    """Make surface models (molecular surfaces, shapes) black but keep their opacity, so they
+    occlude/dim glow behind them in the emission buffer instead of adding colour to it."""
+    import numpy as np
+    try:
+        from chimerax.core.models import Surface
+    except ImportError:
+        return
+    for m in session.models.list():
+        if not isinstance(m, Surface):
+            continue
+        for d in m.all_drawings():
+            try:
+                col = np.array(d.color, np.uint8).copy()
+                vcol = d.vertex_colors
+                vcol = None if vcol is None else vcol.copy()
+                saved.append((d, col, vcol))
+                black = col.copy()
+                black[:3] = 0
+                d.color = black
+                if vcol is not None:
+                    nv = vcol.copy()
+                    nv[:, :3] = 0
+                    d.vertex_colors = nv
+            except Exception:
+                continue
+
+
 def emission_gain(session):
     """Max glow strength over all structures (>=1); emission textures are divided by this."""
     g = 1.0
@@ -266,17 +294,20 @@ def set_glow(session, objects, strength, color=None):
     _register_attrs(session)
     strength = max(0.0, float(strength))
     groups = []
-    atoms = getattr(objects, "atoms", None)
-    if atoms is None and hasattr(objects, "by_structure"):
-        atoms = objects
-    if atoms is not None:
-        groups.extend(atoms.by_structure)
-    models = getattr(objects, "models", None)
-    if models is None and hasattr(objects, "num_atoms") and not hasattr(objects, "by_structure"):
-        models = [objects]
-    for m in models or []:
-        if hasattr(m, "atoms") and hasattr(m, "num_atoms"):
-            groups.append((m, m.atoms))
+    try:
+        from chimerax.atomic import Structure
+    except ImportError:                                   # pragma: no cover
+        Structure = ()
+    if hasattr(objects, "by_structure"):                  # an Atoms collection
+        groups.extend(objects.by_structure)
+    elif Structure and isinstance(objects, Structure):    # a whole Structure
+        groups.append((objects, objects.atoms))
+    else:                                                 # an Objects (atomspec result)
+        # Use only the specified atoms. Objects.models also lists every model that contains
+        # them, so iterating models would wrongly select the whole structure.
+        atoms = getattr(objects, "atoms", None)
+        if atoms is not None:
+            groups.extend(atoms.by_structure)
     rgb = None
     if color is not None:
         if hasattr(color, "rgba"):  # chimerax.core.colors.Color
@@ -322,6 +353,7 @@ def emission_scope(session):
     """
     import numpy as np
     saved = []
+    saved_surf = []
     gain = 1.0
     view = session.main_view
     lighting = view.lighting
@@ -355,6 +387,7 @@ def emission_scope(session):
             rc = res.ribbon_colors.astype(np.float32)
             rc[:, :3] = _hue_only(rc[:, :3] / 255.0) * 255.0 * rs[:, None]
             res.ribbon_colors = np.clip(rc + 0.5, 0, 255).astype(np.uint8)
+        _blacken_surfaces(session, saved_surf)
         lighting.key_light_intensity = 0.0
         lighting.fill_light_intensity = 0.0
         lighting.ambient_light_intensity = 1.45
@@ -363,6 +396,12 @@ def emission_scope(session):
         lighting.depth_cue = False
         yield gain
     finally:
+        for d, col, vcol in saved_surf:
+            try:
+                d.vertex_colors = vcol
+                d.color = col
+            except Exception:
+                pass
         for s, ac, rc in saved:
             try:
                 s.atoms.colors = ac

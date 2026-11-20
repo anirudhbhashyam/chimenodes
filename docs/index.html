@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>chimenodes: MolecularNodes-style rendering for ChimeraX</title>
+<meta name="description" content="Glowing ligands in binding pockets and binders docking, rendered in UCSF ChimeraX with chimenodes.">
+<meta property="og:title" content="chimenodes">
+<meta property="og:description" content="MolecularNodes-style rendering and glow for UCSF ChimeraX.">
+<meta property="og:image" content="assets/hero.jpg">
+<style>
+@font-face {
+  font-family: "Inter";
+  src: url("assets/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  --bg: #05060a;
+  --panel: rgba(12, 14, 22, .72);
+  --line: rgba(255, 255, 255, .12);
+  --text: #eef0f6;
+  --muted: #9aa1b5;
+  --accent: #ffa02e;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--font); font-feature-settings: "cv11", "ss03"; -webkit-font-smoothing: antialiased; }
+body { overflow: hidden; }
+a { color: inherit; }
+
+/* ---- deck ---- */
+.deck { position: fixed; inset: 0; }
+.slide {
+  position: absolute; inset: 0; display: grid;
+  grid-template-rows: auto 1fr auto; gap: 0;
+  padding: max(20px, env(safe-area-inset-top)) clamp(16px, 3.2vw, 48px) 0;
+  opacity: 0; visibility: hidden; transform: translateX(14px);
+  transition: opacity .35s ease, transform .35s ease, visibility 0s linear .35s;
+}
+.slide.active { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.slide.past { transform: translateX(-14px); }
+
+/* top-left PDB id */
+.tag { display: flex; align-items: baseline; gap: 14px; z-index: 3; min-height: 48px; }
+.pdb {
+  font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); letter-spacing: .04em; line-height: 1;
+  font-variant-numeric: tabular-nums; text-transform: uppercase;
+}
+.pdb .dot { display: inline-block; width: .32em; height: .32em; border-radius: 50%;
+  background: var(--glow, var(--accent)); margin-right: .45em; vertical-align: .14em;
+  box-shadow: 0 0 .6em .08em var(--glow, var(--accent)); }
+.what { color: var(--muted); font-weight: 500; font-size: clamp(13px, 1.35vw, 17px); }
+.what b { color: var(--text); font-weight: 600; }
+
+/* stage */
+.stage { position: relative; min-height: 0; display: grid; place-items: center; padding: 12px 0; }
+.frame { position: relative; max-width: 100%; max-height: 100%; aspect-ratio: 16 / 10;
+  height: 100%; border-radius: 14px; overflow: hidden; border: 1px solid var(--line);
+  background: #000; box-shadow: 0 30px 80px -30px rgba(0,0,0,.9); }
+.frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+@supports not (aspect-ratio: 1) { .frame { width: 100%; } }
+
+/* compare slider */
+.cmp .top { clip-path: inset(0 calc(100% - var(--p, 50%)) 0 0); }
+.cmp .bar { position: absolute; top: 0; bottom: 0; left: var(--p, 50%); width: 2px; background: #fff;
+  box-shadow: 0 0 14px rgba(255,255,255,.7); transform: translateX(-1px); pointer-events: none; }
+.cmp .bar::after { content: ""; position: absolute; top: 50%; left: 50%; width: 38px; height: 38px;
+  transform: translate(-50%, -50%); border-radius: 50%; background: rgba(8,10,16,.75);
+  border: 2px solid #fff; backdrop-filter: blur(4px); }
+.cmp .bar::before { content: "\2194"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -52%);
+  z-index: 1; font-size: 18px; line-height: 1; }
+.cmp input[type=range] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0;
+  cursor: ew-resize; touch-action: pan-y; }
+.chip { position: absolute; bottom: 14px; padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); letter-spacing: .01em; pointer-events: none; }
+.chip.l { left: 14px; } .chip.r { right: 14px; }
+.chip.r { color: var(--glow, var(--accent)); }
+
+/* footer: commands + nav */
+.foot { display: flex; align-items: center; gap: 16px; padding: 10px 0 max(14px, env(safe-area-inset-bottom)); min-height: 64px; }
+.cmds { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.cmds code { font-family: var(--mono); font-size: clamp(11px, 1.05vw, 13.5px); color: #d7dbea; background: rgba(255,255,255,.06);
+  border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.cmds code::before { content: "> "; color: var(--accent); }
+.count { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500; white-space: nowrap; }
+
+/* text slides */
+.copy { max-width: 1100px; margin: 0 auto; width: 100%; align-self: center; padding: 8px 0 24px; overflow: auto; }
+.copy h1 { font-size: clamp(34px, 6vw, 76px); line-height: 1.02; letter-spacing: -.03em; margin: 0 0 18px; font-weight: 800; }
+.copy h2 { font-size: clamp(26px, 3.6vw, 46px); letter-spacing: -.02em; line-height: 1.08; margin: 0 0 16px; font-weight: 750; }
+.copy p { color: var(--muted); font-size: clamp(15px, 1.6vw, 20px); line-height: 1.55; max-width: 62ch; margin: 0 0 14px; }
+.copy p b { color: var(--text); font-weight: 600; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; padding: 0; list-style: none; counter-reset: s; }
+.steps li { counter-increment: s; background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  font-size: 14.5px; line-height: 1.45; color: var(--muted); }
+.steps li b { display: block; color: var(--text); font-weight: 650; margin-bottom: 4px; font-size: 15.5px; }
+.steps li::before { content: counter(s, decimal-leading-zero); display: block; color: var(--accent); font-weight: 700; font-size: 12px; letter-spacing: .1em; margin-bottom: 6px; }
+
+/* hero slide */
+.hero .frame { border: 0; border-radius: 0; box-shadow: none; }
+.hero { padding: 0; }
+.hero .tag { position: absolute; top: max(20px, env(safe-area-inset-top)); left: clamp(16px, 3.2vw, 48px); }
+.hero .heroimg { position: absolute; inset: 0; }
+.hero .heroimg img { width: 100%; height: 100%; object-fit: cover; }
+.hero .heroimg::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(5,6,10,.92) 0%, rgba(5,6,10,.55) 42%, rgba(5,6,10,0) 75%), linear-gradient(0deg, rgba(5,6,10,.8), rgba(5,6,10,0) 35%); }
+.hero .copy { position: absolute; left: clamp(16px, 3.2vw, 48px); bottom: 12vh; margin: 0; z-index: 2; width: min(720px, 90vw); }
+.hero .foot { position: absolute; left: clamp(16px, 3.2vw, 48px); right: clamp(16px, 3.2vw, 48px); bottom: 0; z-index: 3; }
+
+/* gallery */
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; min-height: 0; align-content: center; }
+.tile { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #000; aspect-ratio: 16 / 10; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile figcaption { position: absolute; left: 8px; bottom: 8px; right: 8px; font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); width: fit-content; max-width: calc(100% - 16px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile { margin: 0; }
+
+/* install */
+.install { display: flex; gap: 8px; align-items: stretch; margin: 18px 0 8px; max-width: 920px; }
+.install code { flex: 1; font-family: var(--mono); font-size: clamp(12px, 1.3vw, 16px); background: rgba(255,255,255,.06); border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px 16px; overflow-x: auto; white-space: nowrap; }
+.install code::before { content: "$ "; color: var(--accent); }
+.btn { font: inherit; font-weight: 650; font-size: 14px; color: #1a1306; background: var(--accent); border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer; }
+.btn:focus-visible, .nav button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* nav */
+.nav { position: fixed; right: clamp(12px, 2.4vw, 32px); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 10; display: flex; gap: 8px; align-items: center; }
+.nav button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  font-size: 18px; cursor: pointer; backdrop-filter: blur(10px); display: grid; place-items: center; }
+.nav button:hover { background: rgba(255,255,255,.14); }
+.nav button[disabled] { opacity: .35; cursor: default; }
+.nav .count { margin-right: 6px; }
+.progress { position: fixed; left: 0; top: 0; height: 3px; background: var(--accent); z-index: 11; transition: width .35s ease; box-shadow: 0 0 10px var(--accent); }
+.foot { padding-right: 190px; }
+.hint { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); color: var(--muted); font-size: 12px; z-index: 9; opacity: 0; pointer-events: none; transition: opacity .5s; }
+.hint.show { opacity: .9; }
+
+@media (max-width: 800px) {
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid { grid-template-columns: repeat(2, 1fr); overflow: auto; align-content: start; }
+  .foot { padding-right: 0; flex-direction: column; align-items: flex-start; padding-bottom: 76px; }
+  .frame { aspect-ratio: auto; width: 100%; height: auto; max-height: 100%; }
+  .cmp .frame, .frame.media { aspect-ratio: 16 / 10; height: auto; }
+  .copy { padding-bottom: 80px; }
+}
+@media (prefers-reduced-motion: reduce) { .slide, .progress { transition: none; } }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<main class="deck" id="deck" aria-live="polite">
+
+  <!-- 1. title -->
+  <section class="slide hero" data-title="chimenodes">
+    <div class="heroimg"><img src="assets/hero.jpg" alt="A glowing ligand inside a translucent protein pocket"></div>
+    <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div></header>
+    <div class="copy">
+      <h1>Glow inside<br>the pocket.</h1>
+      <p><b>MolecularNodes-style rendering for UCSF ChimeraX.</b> Soft ambient occlusion, satin materials, filmic tone mapping and per-atom emission with bloom, all in real time and in every <code>save image</code> and <code>movie record</code>.</p>
+    </div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default</code><code>chimenodes glow :LIG strength 3</code></div></div>
+  </section>
+
+  <!-- 2. 3ERT -->
+  <section class="slide" data-title="3ERT" style="--glow:#ffa02e">
+    <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>Estrogen receptor α</b> · 4-hydroxytamoxifen (OHT)</div></header>
+    <div class="stage"><div class="frame cmp" style="--p:50%">
+      <img src="assets/er_stock.jpg" alt="3ERT in the default ChimeraX renderer" loading="lazy">
+      <img class="top" src="assets/er_mn.jpg" alt="3ERT with chimenodes: glowing ligand" loading="lazy">
+      <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
+      <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
+    </div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow :OHT strength 3 color #ffa02e</code></div></div>
+  </section>
+
+  <!-- 3. 1STP -->
+  <section class="slide" data-title="1STP" style="--glow:#2fe3ff">
+    <header class="tag"><div class="pdb"><span class="dot"></span>1stp</div><div class="what"><b>Streptavidin</b> · biotin (BTN)</div></header>
+    <div class="stage"><div class="frame cmp" style="--p:50%">
+      <img src="assets/sav_stock.jpg" alt="1STP in the default ChimeraX renderer" loading="lazy">
+      <img class="top" src="assets/sav_mn.jpg" alt="1STP with chimenodes: glowing biotin" loading="lazy">
+      <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
+      <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
+    </div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow :BTN strength 3 color #2fe3ff</code></div></div>
+  </section>
+
+  <!-- 4. 1IEP -->
+  <section class="slide" data-title="1IEP" style="--glow:#ff4fd0">
+    <header class="tag"><div class="pdb"><span class="dot"></span>1iep</div><div class="what"><b>Abl kinase</b> · imatinib (STI)</div></header>
+    <div class="stage"><div class="frame cmp" style="--p:50%">
+      <img src="assets/abl_stock.jpg" alt="1IEP in the default ChimeraX renderer" loading="lazy">
+      <img class="top" src="assets/abl_mn.jpg" alt="1IEP with chimenodes: glowing imatinib" loading="lazy">
+      <div class="bar"></div><input type="range" min="0" max="100" value="50" aria-label="Compare default ChimeraX and chimenodes">
+      <span class="chip l">chimenodes</span><span class="chip r">ChimeraX default</span>
+    </div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset mn_default ao 1 glow 1.5 tonemap agx</code><code>chimenodes glow :STI strength 3 color #ff4fd0</code></div></div>
+  </section>
+
+  <!-- 5. 1YCR binder animation -->
+  <section class="slide" data-title="1YCR" style="--glow:#7dffb0">
+    <header class="tag"><div class="pdb"><span class="dot"></span>1ycr</div><div class="what"><b>MDM2</b> · p53 transactivation peptide, a binder docking</div></header>
+    <div class="stage"><div class="frame media">
+      <img src="assets/binding.webp" alt="Animation: the p53 peptide glows brighter as it docks into the MDM2 cleft" loading="lazy">
+      <span class="chip r">glow rises as it binds</span>
+    </div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes glow /B strength 1.7 color #7dffb0</code><code>chimenodes preset mn_default ao 1 glow 1.4</code></div></div>
+  </section>
+
+  <!-- 6. gallery -->
+  <section class="slide" data-title="Effects" style="--glow:#ffa02e">
+    <header class="tag"><div class="pdb"><span class="dot"></span>3ert</div><div class="what"><b>One scene, eight looks</b> · each stage of the pipeline</div></header>
+    <div class="stage"><div class="grid">
+      <figure class="tile"><img src="assets/gallery_stock.jpg" alt="" loading="lazy"><figcaption>ChimeraX default</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_look.jpg" alt="" loading="lazy"><figcaption>MN look: AO + satin</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_agx.jpg" alt="" loading="lazy"><figcaption>+ AgX tone mapping</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_glow.jpg" alt="" loading="lazy"><figcaption>+ glow</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_neon.jpg" alt="" loading="lazy"><figcaption>neon preset</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_cinematic.jpg" alt="" loading="lazy"><figcaption>cinematic preset</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_dof.jpg" alt="" loading="lazy"><figcaption>glow + depth of field</figcaption></figure>
+      <figure class="tile"><img src="assets/gallery_outline.jpg" alt="" loading="lazy"><figcaption>outline</figcaption></figure>
+    </div></div>
+    <div class="foot"><div class="cmds"><code>chimenodes preset neon</code><code>chimenodes dof 1 aperture 0.7</code><code>chimenodes outline 0.8</code><code>chimenodes tonemap agx exposure 0.25</code></div></div>
+  </section>
+
+  <!-- 7. how it works -->
+  <section class="slide" data-title="How it works">
+    <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>How it works</b></div></header>
+    <div class="copy">
+      <h2>A post-process chain on top of ChimeraX's own renderer.</h2>
+      <p>The scene is drawn once into a floating-point buffer, glowing atoms are drawn again as pure emission (surfaces dim it, cartoons stay dark), and a short chain of fullscreen passes finishes the frame. Effects that are off cost nothing, and a failing pass disables itself without breaking rendering.</p>
+      <ol class="steps">
+        <li><b>HDR capture</b>Scene plus depth into a 16-bit float buffer.</li>
+        <li><b>Emission</b>Per-atom <code>glow</code>, hue-only so dark chains glow as well as light ones.</li>
+        <li><b>Bloom</b>Dual-Kawase blur pyramid with a soft knee.</li>
+        <li><b>Look</b>Ambient occlusion into albedo, satin shading, rim light.</li>
+        <li><b>Lens</b>Depth of field and outline from linear depth.</li>
+        <li><b>Film</b>AgX tone mapping, vignette, grain and FXAA.</li>
+      </ol>
+    </div>
+    <div class="foot"><div class="cmds"><code>OpenGL 3.3 core</code><code>macOS, Linux, Windows</code><code>ChimeraX ≥ 1.8</code></div></div>
+  </section>
+
+  <!-- 8. install -->
+  <section class="slide" data-title="Install">
+    <header class="tag"><div class="pdb"><span class="dot"></span>chimenodes</div><div class="what"><b>Install</b></div></header>
+    <div class="copy">
+      <h2>One line. No Python setup.</h2>
+      <p>The installer finds ChimeraX, then builds and installs the bundle with ChimeraX's own bundled Python, so you don't need system Python, uv, pixi or git.</p>
+      <div class="install"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh | sh</code><button class="btn" id="copy" type="button">Copy</button></div>
+      <p>Then, in ChimeraX: <code>open 1ycr</code> · <code>chimenodes preset mn_default</code> · <code>chimenodes glow /B strength 2</code></p>
+    </div>
+    <div class="foot"><div class="cmds"><code>chimenodes off</code><code>sh install.sh --uninstall</code></div></div>
+  </section>
+</main>
+
+<nav class="nav" aria-label="Slides">
+  <span class="count" id="count">1 / 8</span>
+  <button id="prev" type="button" aria-label="Previous slide">&#8592;</button>
+  <button id="next" type="button" aria-label="Next slide">&#8594;</button>
+</nav>
+<div class="hint" id="hint">Use ← → or swipe · F for fullscreen</div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var n = slides.length, i = 0;
+  var count = document.getElementById('count'), prog = document.getElementById('progress');
+  var prev = document.getElementById('prev'), next = document.getElementById('next');
+
+  function show(k, push) {
+    i = Math.max(0, Math.min(n - 1, k));
+    slides.forEach(function (s, j) {
+      s.classList.toggle('active', j === i);
+      s.classList.toggle('past', j < i);
+      s.setAttribute('aria-hidden', j === i ? 'false' : 'true');
+    });
+    count.textContent = (i + 1) + ' / ' + n;
+    prog.style.width = ((i + 1) / n * 100) + '%';
+    prev.disabled = i === 0; next.disabled = i === n - 1;
+    document.title = slides[i].dataset.title + ' · chimenodes';
+    if (push !== false) { try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {} }
+  }
+  function go(d) { show(i + d); }
+
+  prev.addEventListener('click', function () { go(-1); });
+  next.addEventListener('click', function () { go(1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && e.target.tagName === 'INPUT' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return; // slider keys
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(1); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); go(-1); }
+    else if (k === 'Home') { show(0); } else if (k === 'End') { show(n - 1); }
+    else if (k === 'f' || k === 'F') {
+      var d = document.documentElement;
+      if (!document.fullscreenElement) { (d.requestFullscreen || function () {}).call(d); }
+      else { document.exitFullscreen(); }
+    }
+  });
+
+  // swipe
+  var sx = null, sy = null;
+  document.addEventListener('touchstart', function (e) {
+    if (e.target.closest && e.target.closest('.cmp')) { sx = null; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (sx === null) return;
+    var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+    sx = null;
+  }, { passive: true });
+
+  // compare sliders
+  Array.prototype.forEach.call(document.querySelectorAll('.cmp'), function (c) {
+    var r = c.querySelector('input');
+    function set() { c.style.setProperty('--p', r.value + '%'); }
+    r.addEventListener('input', set); set();
+  });
+
+  // copy button
+  var cb = document.getElementById('copy');
+  cb.addEventListener('click', function () {
+    var t = document.getElementById('cmd').textContent;
+    function done() { cb.textContent = 'Copied'; setTimeout(function () { cb.textContent = 'Copy'; }, 1500); }
+    if (navigator.clipboard) { navigator.clipboard.writeText(t).then(done, function () {}); }
+  });
+
+  var h = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(h) ? 0 : h - 1, false);
+  var hint = document.getElementById('hint');
+  setTimeout(function () { hint.classList.add('show'); }, 600);
+  setTimeout(function () { hint.classList.remove('show'); }, 4500);
+})();
+</script>
+</body>
+</html>

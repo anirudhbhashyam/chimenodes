@@ -2,12 +2,15 @@
 
 A ChimeraX bundle that emulates the look of [MolecularNodes](https://github.com/BradyAJohnston/MolecularNodes).
 
+**Showcase:** [slides](https://anirudhbhashyam.github.io/chimenodes/) (glowing ligands in pockets, a binder docking). Regenerate the assets with
+`ChimeraX --exit --script tools/showcase/render_showcase.py` (opens a GUI window briefly; needs network for PDB fetches).
+
 ## Install (one line)
 
 Requires [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) >= 1.8 and nothing else.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/<owner>/chimenodes/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh | sh
 ```
 
 The script finds ChimeraX on macOS, Linux and Windows

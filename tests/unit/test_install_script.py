@@ -50,8 +50,13 @@ def test_missing_executable():
     assert r.returncode != 0 and "not executable" in r.stderr
 
 
-def test_remote_needs_repo(tmp_path):
+def test_default_repo_is_used(tmp_path):
     r = _run("--dry-run", "--chimerax", _stub(tmp_path))
+    assert r.returncode == 0 and "github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz" in r.stdout
+
+
+def test_empty_repo_is_rejected(tmp_path):
+    r = _run("--dry-run", "--repo", "", "--chimerax", _stub(tmp_path))
     assert r.returncode != 0 and "repository" in r.stderr
 
 

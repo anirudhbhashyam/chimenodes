@@ -241,6 +241,20 @@ def main(session):
               "dark colours glow much weaker than light ones: %s" % gains)
         return {k: round(v, 2) for k, v in gains.items()}
 
+    @case("glow_selection_is_selective")
+    def _():
+        check(scene["atoms"], "atomic scene unavailable")
+        from chimerax.chimenodes import glow as gm
+        m = scene["model"]
+        gm.clear_glow(session)
+        run(session, "chimenodes glow #1:1@C1,C2,C3 strength 2", log=False)
+        d = getattr(m, gm._STORE)
+        n = int((d["strength"] > 0).sum())
+        gm.clear_glow(session)
+        reset()
+        check(n == 3, "expected 3 glowing atoms, got %d of %d" % (n, m.num_atoms))
+        return {"glowing": n, "total": m.num_atoms}
+
     @case("resolution_consistency_2x")
     def _():
         run(session, "chimenodes preset mn_default", log=False)
