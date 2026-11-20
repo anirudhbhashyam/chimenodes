@@ -78,7 +78,7 @@ def main(session):
         return deco
 
     # Hero look shared by all stills
-    LOOK = "chimenodes preset mn_default ao 1 glow 1.0 bloomRadius 0.28 tonemap agx exposure 0.25 vignette 0.3"
+    LOOK = "chimenodes preset mn_default ao 1 glow 0.7 bloomRadius 0.25 tonemap agx exposure 0.25 vignette 0.3"
 
     def pocket_scene(pdb, chain, ligand, protein_hex, ligand_hex, strength, slab, extra=""):
         R("open %s" % pdb)
@@ -108,7 +108,7 @@ def main(session):
     @scene("er")
     def _():
         pocket_scene("3ert", "A", "OHT", "#7d8db0", "#ffb86b", 3, 9)
-        render_pair("er", ":OHT", "#ffb86b", 2)
+        render_pair("er", ":OHT", "#ffb86b", 1.5)
         # hero banner
         save_jpg(shot(3200, 1600, 3), "hero.jpg", 90)
         return {}
@@ -116,13 +116,13 @@ def main(session):
     @scene("sav")
     def _():
         pocket_scene("1stp", "A", "BTN", "#8a96b8", "#2fe3ff", 3, 8)
-        render_pair("sav", ":BTN", "#2fe3ff", 2)
+        render_pair("sav", ":BTN", "#2fe3ff", 1.5)
         return {}
 
     @scene("abl")
     def _():
         pocket_scene("1iep", "A", "STI", "#8c8fb8", "#ff4fd0", 3, 9, extra="delete /B")
-        render_pair("abl", ":STI", "#ff4fd0", 2)
+        render_pair("abl", ":STI", "#ff4fd0", 1.5)
         return {}
 
     @scene("gallery")
@@ -143,7 +143,7 @@ def main(session):
             R("chimenodes off")
             R(command)
             if key != "stock":
-                R("chimenodes glow :OHT strength 2 color #ffb86b")
+                R("chimenodes glow :OHT strength 1.5 color #ffb86b")
                 if key in ("look", "agx", "outline"):
                     R("chimenodes glow 0")
             save_jpg(shot(1280, 800, 2), "gallery_%s.jpg" % key, 90)
@@ -186,13 +186,13 @@ def main(session):
     @scene("barn")
     def _():
         binder_scene("1brs", "A", "D", "#7d8db0", "#7dffb0", zoom=1.2)      # barnase (target) / barstar (binder)
-        render_pair("barn", "/D", "#7dffb0", 0.7)
+        render_pair("barn", "/D", "#7dffb0", 0.5)
         return {}
 
     @scene("rbd")
     def _():
         binder_scene("6m0j", "A", "E", "#7d8db0", "#b78cff", zoom=0.95)      # ACE2 (target) / SARS-CoV-2 RBD (binder)
-        render_pair("rbd", "/E", "#b78cff", 0.7)
+        render_pair("rbd", "/E", "#b78cff", 0.5)
         return {}
 
     clean()
