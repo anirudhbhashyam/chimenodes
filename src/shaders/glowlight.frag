@@ -39,12 +39,16 @@ void main() {
     float d0 = texture(uDepth, uv).r;
     if (d0 >= 1.0 || uCount <= 0) { fragColor = base; return; }
     vec3 p = viewPos(uv, lin(d0));
-    vec2 px = 1.0 / uOutSize;
-    vec2 uvr = uv + vec2(px.x, 0.0);
-    vec2 uvu = uv + vec2(0.0, px.y);
-    vec3 pr = viewPos(uvr, lin(texture(uDepth, uvr).r));
-    vec3 pu = viewPos(uvu, lin(texture(uDepth, uvu).r));
-    vec3 n = cross(pr - p, pu - p);
+    // Normal from a wide, edge-aware central difference: single-pixel differences of a quantised
+    // depth buffer produce visible blocks, so use a ~4px baseline and take the smoother side per axis.
+    vec2 px = 4.0 / uOutSize;
+    vec3 pl = viewPos(uv - vec2(px.x, 0.0), lin(texture(uDepth, uv - vec2(px.x, 0.0)).r));
+    vec3 pr = viewPos(uv + vec2(px.x, 0.0), lin(texture(uDepth, uv + vec2(px.x, 0.0)).r));
+    vec3 pd = viewPos(uv - vec2(0.0, px.y), lin(texture(uDepth, uv - vec2(0.0, px.y)).r));
+    vec3 pu = viewPos(uv + vec2(0.0, px.y), lin(texture(uDepth, uv + vec2(0.0, px.y)).r));
+    vec3 dx = abs(pr.z - p.z) < abs(p.z - pl.z) ? pr - p : p - pl;
+    vec3 dy = abs(pu.z - p.z) < abs(p.z - pd.z) ? pu - p : p - pd;
+    vec3 n = cross(dx, dy);
     float nl = length(n);
     n = nl > 1e-12 ? n / nl : vec3(0.0, 0.0, 1.0);
     if (n.z < 0.0) n = -n;   // face the camera
@@ -61,7 +65,7 @@ void main() {
         float fall = 1.0 / ((1.0 + q * q) * (1.0 + q * q));   // steeper than inverse-square: stays local
         float edge = 1.0 - smoothstep(2.0, 3.0, q);       // smooth to zero at 3R
         // wrap / two-sided: translucent depth means the light is often behind the visible wall
-        float ndl = mix(0.35, 1.0, 0.5 + 0.5 * dot(n, lv / max(d, 1e-5)));
+        float ndl = mix(0.7, 1.0, 0.5 + 0.5 * dot(n, lv / max(d, 1e-5)));
         light += uLightCol[i] * (fall * edge * ndl);
     }
 
@@ -72,5 +76,7 @@ void main() {
     }
     float alb = 0.2 + 0.8 * clamp(luma(base.rgb), 0.0, 1.0);
     vec3 add = light * (uStrength * recv * alb);
-    fragColor = vec4(base.rgb + add, base.a);
+    // sub-LSB dither so smooth ramps do not band after tonemapping
+    float dither = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;
+    fragColor = vec4(base.rgb + add * (1.0 + 4.0 * dither), base.a);
 }
