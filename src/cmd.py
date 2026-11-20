@@ -190,24 +190,25 @@ def _user_presets_path(session):
 def chimenodes_preset_save(session, name):
     from chimerax.core.errors import UserError
     from . import state, presets
-    if not hasattr(presets, "save_user_preset"):
-        raise UserError("chimenodes: preset saving not supported by this build")
     p = state.get_params(session).to_dict()
     for k in ("enabled", "preset"):
         p.pop(k, None)
-    presets.save_user_preset(name, p)
+    try:
+        presets.save_preset(name, p)
+    except ValueError as e:
+        raise UserError("chimenodes: %s" % e)
     session.logger.info("chimenodes: saved preset '%s'" % name)
 
 
 def chimenodes_preset_delete(session, name):
     from chimerax.core.errors import UserError
     from . import presets
-    if name in getattr(presets, "BUILTIN", {}):
-        raise UserError("chimenodes: cannot delete built-in preset '%s'" % name)
-    if not hasattr(presets, "delete_user_preset"):
-        raise UserError("chimenodes: preset deletion not supported by this build")
-    if not presets.delete_user_preset(name):
+    try:
+        presets.delete_preset(name)
+    except KeyError:
         raise UserError("chimenodes: no such user preset '%s'" % name)
+    except ValueError as e:
+        raise UserError("chimenodes: %s" % e)
     session.logger.info("chimenodes: deleted preset '%s'" % name)
 
 
