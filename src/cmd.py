@@ -243,11 +243,11 @@ def chimenodes_glow(session, objects=None, strength=None, color=None, **kw):
     glow.set_glow(session, objects, s, rgba)
     from . import state
     p = state.get_params(session)
-    if not p.enabled:
+    if not p.enabled or p.glow == 0:
         q = Params.from_dict(p.to_dict())
         q.enabled = True
         if q.glow == 0:
-            q.glow = 1.0
+            q.glow = 1.0   # emission is only visible through bloom
         _commit(session, q)
 
 

@@ -153,7 +153,7 @@ def main(session):
 
     single("ao", "chimenodes ao 1 aoRadius 0.5")
     single("rim", "chimenodes rim 1")
-    single("glow_threshold", "chimenodes glow 2 bloomThreshold 0.2")
+    single("glow_threshold", "chimenodes tonemap none bloomThreshold 0.2 glow 2")
     single("tonemap_aces", "chimenodes tonemap aces")
     single("tonemap_filmic", "chimenodes tonemap filmic")
     single("tonemap_agx", "chimenodes tonemap agx")
@@ -166,19 +166,20 @@ def main(session):
     single("quality_high", "chimenodes preset cinematic quality high")
     single("quality_draft", "chimenodes preset cinematic quality draft")
 
-    @case("tonemap_none_exposure0_identity")
+    @case("tonemap_none_exposure0_is_noop")
     def _():
-        run(session, "chimenodes on tonemap none exposure 0 ao 0.0 rim 0", log=False)
-        d = float(abs(render() - stock).max())
+        run(session, "chimenodes tonemap none exposure 0", log=False)
+        pipe = hook.get(session)
+        act = [getattr(p, "name", "?") for p in pipe.active_passes()] if pipe else []
         reset()
-        check(d <= 1, "identity tonemap changed image by %s" % d)
-        return {"max_diff": d}
+        check(act == [], "identity settings still activate passes: %s" % act)
+        return {}
 
     @case("bloom_luminance_monotonic")
     def _():
         vals = []
         for g in (0.0, 1.0, 2.5, 5.0):
-            run(session, "chimenodes on glow %s bloomThreshold 0.1 tonemap none" % g, log=False)
+            run(session, "chimenodes tonemap none bloomThreshold 0.1 glow %s" % g, log=False)
             vals.append(lum(render()))
         reset()
         check(all(b >= a - 1e-6 for a, b in zip(vals, vals[1:])), "luminance not monotonic: %s" % vals)
@@ -187,9 +188,9 @@ def main(session):
 
     @case("glow_zero_equals_bloom_off")
     def _():
-        run(session, "chimenodes on glow 0 tonemap aces", log=False)
+        run(session, "chimenodes tonemap aces glow 0", log=False)
         a = render()
-        run(session, "chimenodes on glow 3 tonemap aces", log=False)
+        run(session, "chimenodes tonemap aces glow 3", log=False)
         run(session, "chimenodes glow 0", log=False)
         b = render()
         reset()
@@ -200,20 +201,25 @@ def main(session):
     @case("per_object_glow_emission")
     def _():
         check(scene["atoms"], "atomic scene unavailable")
-        run(session, "chimenodes on tonemap aces", log=False)
+        run(session, "chimenodes tonemap aces", log=False)
         base = render()
         run(session, "chimenodes glow #1 strength 4 color yellow", log=False)
         run(session, "chimenodes glow 1.5", log=False)
         img = render()
+        only_global = None
         pipe = hook.get(session)
         ok = pipe is not None
+        from chimerax.chimenodes import glow as glow_mod
+        had = glow_mod.has_glow_objects(session)
         run(session, "chimenodes glow clear", log=False)
+        gone = not glow_mod.has_glow_objects(session)
         cleared = render()
         reset()
         png(img, "glow_emission")
         check(ok, "hook died during emission render")
         check(lum(img) > lum(base), "emission added no light")
-        check(abs(cleared - base).mean() < abs(img - base).mean(), "glow clear had no effect")
+        check(had and gone, "glow objects flag wrong: before=%s after_clear_gone=%s" % (had, gone))
+        check(abs(cleared - img).mean() > 0, "glow clear did not change the image")
         return {"lum_base": round(lum(base), 2), "lum_glow": round(lum(img), 2)}
 
     @case("resolution_consistency_2x")

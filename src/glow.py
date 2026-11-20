@@ -270,6 +270,8 @@ def set_glow(session, objects, strength, color=None):
             groups.append((m, m.atoms))
     rgb = None
     if color is not None:
+        if hasattr(color, "rgba"):  # chimerax.core.colors.Color
+            color = color.rgba
         c = np.array(color[:3], np.float32)
         rgb = c / 255.0 if c.max() > 1.0 else c
     count = 0

@@ -77,7 +77,7 @@ class PassContext(object):
         self.final = final
         self.color = scene.texture
         self.depth = scene.depth_texture
-        self.emission = pipeline.emission
+        self.emission = None  # per-frame; never reuse a previous frame's emission
         self.target = final
         self.near, self.far, self.perspective = pipeline.near_far(view, camera)
         self.scene_radius = pipeline.scene_radius(view)
@@ -353,6 +353,7 @@ class Pipeline(object):
         try:
             final = _final_target(r)
             camera = camera if camera is not None else view.camera
+            self.emission = None
             actives = self.active_passes()
             pass_ctx = PassContext(self, view, r, camera, sc, final)
             # Overlays etc. drawn afterwards must not see stale depth.
