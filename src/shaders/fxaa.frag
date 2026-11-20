@@ -9,7 +9,7 @@ uniform float uEdgeThresholdMin;
 out vec4 fragColor;
 
 float lum(vec3 c) { return dot(clamp(c, 0.0, 1.0), vec3(0.299, 0.587, 0.114)); }
-float lumAt(vec2 uv, ivec2 o) { return lum(textureOffset(uColor, uv, o).rgb); }
+float lumAt(vec2 uv, ivec2 o) { return lum(texture(uColor, uv + vec2(o) / vec2(textureSize(uColor, 0))).rgb); }
 
 const float STEPS[8] = float[8](1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 4.0);
 

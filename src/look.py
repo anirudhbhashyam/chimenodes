@@ -68,8 +68,8 @@ def look_settings(params) -> Dict[str, Any]:
         "lighting": ("intensity 0.7 fillIntensity 0.3 ambientIntensity %.2f "
                      "multiShadow %d msMapSize 1024 msDepthBias 0.01 "
                      "shadows false depthCue false" % (ambient, ms)),
-        "material": ("specularReflection 0.4 specularExponent 20 "
-                     "diffuseReflection 0.8 ambientReflection 0.8"),
+        "material": ("reflectivity 0.8 specularReflectivity 0.4 "
+                     "exponent 20 ambientReflectivity 0.8"),
         "silhouettes": False,
     }
 

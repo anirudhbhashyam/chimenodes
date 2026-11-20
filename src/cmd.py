@@ -301,6 +301,14 @@ def register_commands(logger=None):
     syn = "Configure MolecularNodes-style rendering"
     register("chimenodes", CmdDesc(keyword=kwd, synopsis=syn), chimenodes,
              logger=logger)
+    # `chimenodes preset NAME [kwds]`: needed because "preset" is also a subcommand word
+    # (preset save/delete/list), which would otherwise shadow the keyword form.
+    def chimenodes_preset_apply(session, name, **kw):
+        return chimenodes(session, preset=name, **kw)
+    register("chimenodes preset",
+             CmdDesc(required=[("name", StringArg)], keyword=[k for k in kwd if k[0] != "preset"],
+                     synopsis="Apply a named look preset"),
+             chimenodes_preset_apply, logger=logger)
     for name, fn in (("on", chimenodes_on), ("off", chimenodes_off),
                      ("toggle", chimenodes_toggle), ("reset", chimenodes_reset),
                      ("info", chimenodes_info)):
