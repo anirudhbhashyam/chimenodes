@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from tests.unit.conftest import load
 
@@ -54,3 +56,30 @@ def test_builtin_presets_merge():
         kw = presets.get_preset(name)
         out = cmd.merge_params(load("params").Params(), kw, {}, name)
         assert out.preset == name
+
+
+@pytest.mark.parametrize("applied", [True, False], ids=["success", "failure"])
+def test_status_matches_pipeline_result(monkeypatch, applied):
+    """The status line must report what the pipeline did, not what was asked for.
+
+    When the pipeline cannot be enabled -- no OpenGL 3.3 core, as in an offscreen
+    or software-GL context -- the command fails safe to stock rendering rather than
+    raising, so a batch render script keeps going. It then has to say so: reporting
+    "on" over a stock render is what the status bar did before.
+    """
+    cmd, params, state = load("cmd"), load("params"), load("state")
+    warnings, status = [], []
+    session = SimpleNamespace(logger=SimpleNamespace(
+        warning=warnings.append,
+        status=lambda msg, **kw: status.append(msg),
+    ))
+    monkeypatch.setattr(state, "apply_params", lambda session, p: applied)
+    monkeypatch.setattr(state, "get_params", lambda session: params.Params())
+
+    cmd.chimenodes(session, glow=1.5)
+
+    assert status == ["chimenodes: %s" % ("on" if applied else "off")]
+    if applied:
+        assert warnings == []
+    else:
+        assert len(warnings) == 1 and "could not enable" in warnings[0]
