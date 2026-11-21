@@ -55,15 +55,20 @@ def test_default_repo_is_used(tmp_path):
     assert r.returncode == 0 and "github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz" in r.stdout
 
 
-def test_empty_repo_is_rejected(tmp_path):
-    r = _run("--dry-run", "--repo", "", "--chimerax", _stub(tmp_path))
-    assert r.returncode != 0 and "repository" in r.stderr
+@pytest.mark.parametrize("option", ["--repo", "--ref"])
+def test_source_option_is_rejected(option):
+    r = _run(option, "custom")
+    assert r.returncode != 0 and f"unknown option: {option}" in r.stderr
 
 
-def test_remote_dry_run_url(tmp_path):
-    r = _run("--dry-run", "--repo", "https://github.com/o/chimenodes.git", "--ref", "v1",
-             "--chimerax", _stub(tmp_path))
-    assert r.returncode == 0 and "github.com/o/chimenodes/archive/v1.tar.gz" in r.stdout
+def test_source_environment_overrides_are_ignored(tmp_path):
+    r = _run("--dry-run", "--chimerax", _stub(tmp_path), env={
+        "CHIMENODES_REPO": "https://github.com/example/fork",
+        "CHIMENODES_REF": "v1",
+    })
+    assert r.returncode == 0, r.stderr
+    assert "https://github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz" in r.stdout
+    assert "github.com/example/fork" not in r.stdout
 
 
 def test_uninstall_dry_run(tmp_path):
@@ -93,6 +98,8 @@ def test_truncated_download_runs_nothing(tmp_path):
 def test_help_works_when_piped():
     r = subprocess.run("cat '%s' | sh -s -- --help" % SCRIPT, shell=True, capture_output=True, text=True)
     assert r.returncode == 0 and "--build-only" in r.stdout
+    assert "--chimerax" in r.stdout and "--help" in r.stdout
+    assert "--repo" not in r.stdout and "--ref" not in r.stdout
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="macOS app-bundle discovery")

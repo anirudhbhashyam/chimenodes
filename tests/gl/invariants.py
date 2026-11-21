@@ -6,7 +6,6 @@ pytestmark = pytest.mark.gl
 
 
 def _image(session, w=200, h=200, supersample=3):
-    from chimerax.core.commands import run
     session.main_view.render.make_current()
     img = session.main_view.image(w, h, supersample=supersample)
     return np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
@@ -21,7 +20,7 @@ def scene(session):
     from chimerax.core.commands import run
     run(session, "close; shape sphere radius 5 color orange; view; lighting soft")
     yield session
-    run(session, "chimenodes off; close")
+    run(session, "chimenodes reset; close")
 
 
 def run(session, cmd):
@@ -31,16 +30,19 @@ def run(session, cmd):
 
 def test_off_equals_stock(scene):
     stock = _image(scene)
-    run(scene, "chimenodes on glow 1")
+    run(scene, "chimenodes glow 1")
     run(scene, "chimenodes off")
     after = _image(scene)
     assert np.abs(stock - after).max() <= 1.0 / 255 + 1e-6
 
 
 def test_glow_zero_equals_bloom_off(scene):
+    from cnsrc.hook import uninstall
+
     run(scene, "chimenodes glow 0 tonemap none")
     a = _image(scene)
-    run(scene, "chimenodes off")
+    # Keep lighting and materials fixed while removing the post-processing hook.
+    uninstall(scene)
     b = _image(scene)
     assert np.abs(a - b).mean() < 0.01
 

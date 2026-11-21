@@ -1,6 +1,7 @@
 # Dev tooling only. The bundle itself is built by ChimeraX from bundle_info.xml.
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
+pythonpath = ["."]
 markers = ["gl: needs ChimeraX + an OpenGL context (skipped otherwise)"]
 
 [tool.ruff]

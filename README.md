@@ -4,17 +4,22 @@ A ChimeraX bundle that emulates the look of [MolecularNodes](https://github.com/
 
 **Showcase:** [slides](https://anirudhbhashyam.github.io/chimenodes/)
 
-## Install (one line)
+## Install
 
-Requires [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) >= 1.8 and nothing else.
+Requires [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) >= 1.8, curl, and tar.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh -o chimenodes-install.sh &&
+    sh chimenodes-install.sh
 ```
 
-The script finds ChimeraX on macOS, Linux and Windows
+The installer downloads chimenodes from the official repository's `main` branch.
+It finds ChimeraX on macOS, Linux and Windows
 (Git Bash) and stops with download instructions if it is missing (the ChimeraX license must be
 accepted by you, so it is never downloaded automatically).
+
+Use `sh chimenodes-install.sh --chimerax /path/to/ChimeraX` for a custom ChimeraX
+location, or `sh chimenodes-install.sh --help` to list the options.
 
 ## Editable install (development)
 Editable install, any platform:
@@ -51,8 +56,13 @@ representation, glow) and `render_blender.py`. Then:
 - Screen-space AO/DOF/outline are approximations of the Blender look, not a path tracer.
 
 ## Development
+    uv run --no-project --with pytest --with numpy pytest tests -rPs
     python -m pytest tests/unit                      # pure Python, no ChimeraX
-    ChimeraX --nogui --offscreen --exit --script tests/gl/run_gl.py   # GL invariants
     ChimeraX --nogui --offscreen --exit --script tests/bench/bench.py
+
+The full suite runs the GL invariants inside ChimeraX when it finds an executable
+and can use an OpenGL context. Set `CHIMERAX_EXE` to select a specific executable.
+ChimeraX's bundled Python also needs pytest. On macOS the GL run opens a ChimeraX
+window briefly.
 
 See `docs/ARCHITECTURE.md` and `docs/user-guide.md`.

@@ -1,8 +1,8 @@
 #!/bin/sh
 # chimenodes installer: MolecularNodes-style rendering + glow for UCSF ChimeraX.
 #
-#   curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh | sh
-#   curl -fsSL <same url> | sh -s -- --ref v1.0.6
+#   curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh -o chimenodes-install.sh
+#   sh chimenodes-install.sh
 #
 # No system Python, uv, pixi, git or compiler is needed: the bundle is built and installed
 # by ChimeraX itself using ChimeraX's bundled Python. Requirements: ChimeraX >= 1.8, and
@@ -11,12 +11,11 @@
 # ChimeraX itself is NOT downloaded for you: its license must be accepted by you at
 # https://www.cgl.ucsf.edu/chimerax/download.html
 #
-# Structure note: everything is defined as functions and `main "$@"` is the very last line,
-# so a truncated download (curl | sh) defines functions but never runs anything.
+# Keep the entry point after the function definitions.
 
 set -eu
 
-DEFAULT_REPO="https://github.com/anirudhbhashyam/chimenodes"
+SOURCE_URL="https://github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz"
 BUNDLE_NAME="ChimeraX-Chimenodes"
 MIN_MAJOR=1
 MIN_MINOR=8
@@ -34,8 +33,6 @@ chimenodes installer
 Usage: install.sh [options]
 
   --chimerax PATH   ChimeraX executable or .app bundle   (env CHIMERAX_EXE)
-  --repo URL        GitHub repo URL                      (env CHIMENODES_REPO)
-  --ref REF         branch, tag or commit                (env CHIMENODES_REF, default: main)
   --local DIR       install from a local checkout instead of downloading
   --build-only      build the wheel into ./dist, do not install
   --uninstall       remove chimenodes from ChimeraX
@@ -110,7 +107,7 @@ chimenodes is a ChimeraX plugin, so ChimeraX (>= 1.8) must be installed first:
   1. Download it from https://www.cgl.ucsf.edu/chimerax/download.html
      (free for non-commercial use; you must accept its license yourself)
   2. Install it, then re-run this script. If it is in a non-standard place, point to it:
-       curl -fsSL <url>/install.sh | sh -s -- --chimerax /path/to/ChimeraX
+       sh /path/to/install.sh --chimerax /path/to/ChimeraX
      or set CHIMERAX_EXE=/path/to/ChimeraX
 No system Python, uv or pixi is required: ChimeraX ships its own Python.
 EOF
@@ -121,8 +118,6 @@ EOF
 cx_run() { "$CX" --nogui --exit --cmd "$1" </dev/null; }
 
 main() {
-    REPO="${CHIMENODES_REPO:-$DEFAULT_REPO}"
-    REF="${CHIMENODES_REF:-main}"
     CX="${CHIMERAX_EXE:-}"
     LOCAL=""
     MODE="install"
@@ -131,8 +126,6 @@ main() {
     while [ $# -gt 0 ]; do
         case "$1" in
             --chimerax)   [ $# -ge 2 ] || die "--chimerax needs a path"; CX="$2"; shift 2 ;;
-            --repo)       [ $# -ge 2 ] || die "--repo needs a URL"; REPO="$2"; shift 2 ;;
-            --ref)        [ $# -ge 2 ] || die "--ref needs a value"; REF="$2"; shift 2 ;;
             --local)      [ $# -ge 2 ] || die "--local needs a directory"; LOCAL="$2"; shift 2 ;;
             --build-only) MODE="build"; shift ;;
             --uninstall)  MODE="uninstall"; shift ;;
@@ -174,25 +167,22 @@ main() {
         SRC=$(cd "$LOCAL" && pwd)
         info "Using local source: $SRC"
     else
-        [ -n "$REPO" ] || die "no repository URL configured. Pass --repo https://github.com/<owner>/chimenodes (or --local DIR)."
-        REPO=${REPO%/}; REPO=${REPO%.git}
-        URL="$REPO/archive/$REF.tar.gz"
-        info "Downloading $URL"
+        info "Downloading $SOURCE_URL"
         if [ "$DRY" -eq 1 ]; then
-            say "(dry run) would download, build and install $BUNDLE_NAME from $URL"; exit 0
+            say "(dry run) would download, build and install $BUNDLE_NAME from $SOURCE_URL"; exit 0
         fi
         TMP=$(mktemp -d 2>/dev/null || mktemp -d -t chimenodes)
         if command -v curl >/dev/null 2>&1; then
-            curl -fsSL "$URL" -o "$TMP/src.tar.gz" </dev/null || die "download failed: $URL"
+            curl -fsSL "$SOURCE_URL" -o "$TMP/src.tar.gz" </dev/null || die "download failed: $SOURCE_URL"
         elif command -v wget >/dev/null 2>&1; then
-            wget -q -O "$TMP/src.tar.gz" "$URL" </dev/null || die "download failed: $URL"
+            wget -q -O "$TMP/src.tar.gz" "$SOURCE_URL" </dev/null || die "download failed: $SOURCE_URL"
         else
             die "need curl or wget to download the source"
         fi
         command -v tar >/dev/null 2>&1 || die "need tar to unpack the source"
         mkdir "$TMP/src"
         tar -xzf "$TMP/src.tar.gz" -C "$TMP/src" --strip-components=1 || die "could not unpack the download"
-        [ -f "$TMP/src/bundle_info.xml" ] || die "downloaded archive has no bundle_info.xml (wrong --repo/--ref?)"
+        [ -f "$TMP/src/bundle_info.xml" ] || die "downloaded archive has no bundle_info.xml"
         SRC="$TMP/src"
     fi
 
@@ -250,7 +240,7 @@ Next steps (in ChimeraX):
     chimenodes preset mn_default    # MolecularNodes-style look
     chimenodes glow /D strength 1.1 # per-object glow (bloom)
     chimenodes off                  # back to stock rendering
-Uninstall:  curl -fsSL <url>/install.sh | sh -s -- --uninstall
+Uninstall:  sh /path/to/install.sh --uninstall
 EOF
 }
 

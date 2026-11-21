@@ -125,7 +125,6 @@ def collect_scene(session, models=None) -> Dict[str, Any]:
 
 
 def export_blender(session, path: str, models=None) -> str:
-    from chimerax.core.commands import run
     path = os.path.abspath(os.path.expanduser(path))
     if os.path.splitext(path)[1].lower() not in (".cif", ".pdb", ".bcif"):
         path += ".cif"
@@ -134,9 +133,8 @@ def export_blender(session, path: str, models=None) -> str:
     sc = collect_scene(session, models)
     if not sc["structures"]:
         raise OSError("no atomic structures to export")
-    spec = "#" + ",".join(s.id_string for s in sc["structures"])
-    fmt = "pdb" if path.lower().endswith(".pdb") else "mmcif"
-    run(session, 'save "%s" models %s format %s' % (path, spec, fmt), log=False)
+    fmt = "pdb" if path.casefold().endswith(".pdb") else "mmcif"
+    session.save_command.save_data(path, format=fmt, models=sc["structures"])
     data = build_sidecar(path, sc["camera"], sc["models"], sc["params"],
                          sc["background"], sc["glow_atoms"])
     write_sidecar(sidecar_path(path), data)
