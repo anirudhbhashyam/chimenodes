@@ -1,5 +1,5 @@
 <BundleInfo name="ChimeraX-Chimenodes"
-            version="1.0.6"
+            version="1.0.7"
             package="chimerax.chimenodes"
             minSessionVersion="1" maxSessionVersion="1"
             customInit="true"
