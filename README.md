@@ -6,14 +6,16 @@ A ChimeraX bundle that emulates the look of [MolecularNodes](https://github.com/
 
 ## Install
 
-Requires [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) >= 1.8, curl, and tar.
+Requires [UCSF ChimeraX](https://www.cgl.ucsf.edu/chimerax/download.html) >= 1.8,
+curl, and either `sha256sum` or `shasum`.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh -o chimenodes-install.sh &&
     sh chimenodes-install.sh
 ```
 
-The installer downloads chimenodes from the official repository's `main` branch.
+The installer downloads the prebuilt wheel from the v1.0.7 GitHub release,
+verifies its SHA-256 checksum, and installs it for the current user.
 It finds ChimeraX on macOS, Linux and Windows
 (Git Bash) and stops with download instructions if it is missing (the ChimeraX license must be
 accepted by you, so it is never downloaded automatically).

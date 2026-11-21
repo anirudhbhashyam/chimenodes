@@ -10,6 +10,10 @@ import pytest
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SCRIPT = os.path.join(ROOT, "install.sh")
+RELEASE_WHEEL_URL = (
+    "https://github.com/anirudhbhashyam/chimenodes/releases/download/v1.0.7/"
+    "chimerax_chimenodes-1.0.7-py3-none-any.whl"
+)
 
 pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX shell script")
 
@@ -50,9 +54,27 @@ def test_missing_executable():
     assert r.returncode != 0 and "not executable" in r.stderr
 
 
-def test_default_repo_is_used(tmp_path):
+def test_default_uses_release_wheel(tmp_path):
     r = _run("--dry-run", "--chimerax", _stub(tmp_path))
-    assert r.returncode == 0 and "github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz" in r.stdout
+    assert r.returncode == 0, r.stderr
+    assert RELEASE_WHEEL_URL in r.stdout and "toolshed install" in r.stdout
+    assert "devel build" not in r.stdout
+
+
+def test_release_build_only_previews_saving_wheel(tmp_path):
+    r = _run("--dry-run", "--build-only", "--chimerax", _stub(tmp_path))
+    assert r.returncode == 0, r.stderr
+    assert RELEASE_WHEEL_URL in r.stdout and "save it to ./dist" in r.stdout
+    assert "toolshed install" not in r.stdout
+
+
+def test_checksum_mismatch_prevents_install(tmp_path):
+    curl = tmp_path / "curl"
+    curl.write_text('#!/bin/sh\nprintf "%s\\n" "unexpected download" > "$3"\n')
+    curl.chmod(curl.stat().st_mode | stat.S_IEXEC)
+    r = _run("--chimerax", _stub(tmp_path), env={"PATH": f"{tmp_path}{os.pathsep}{os.environ['PATH']}"})
+    assert r.returncode != 0 and "SHA-256 mismatch" in r.stderr
+    assert "toolshed install" not in r.stdout
 
 
 @pytest.mark.parametrize("option", ["--repo", "--ref"])
@@ -67,7 +89,7 @@ def test_source_environment_overrides_are_ignored(tmp_path):
         "CHIMENODES_REF": "v1",
     })
     assert r.returncode == 0, r.stderr
-    assert "https://github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz" in r.stdout
+    assert RELEASE_WHEEL_URL in r.stdout
     assert "github.com/example/fork" not in r.stdout
 
 

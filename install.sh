@@ -4,9 +4,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/install.sh -o chimenodes-install.sh
 #   sh chimenodes-install.sh
 #
-# No system Python, uv, pixi, git or compiler is needed: the bundle is built and installed
-# by ChimeraX itself using ChimeraX's bundled Python. Requirements: ChimeraX >= 1.8, and
-# curl or wget plus tar (only when not using --local).
+# ChimeraX installs the prebuilt release wheel using its bundled Python.
+# Requires ChimeraX >= 1.8 and, for downloads, curl or wget and sha256sum or shasum.
 #
 # ChimeraX itself is NOT downloaded for you: its license must be accepted by you at
 # https://www.cgl.ucsf.edu/chimerax/download.html
@@ -15,7 +14,10 @@
 
 set -eu
 
-SOURCE_URL="https://github.com/anirudhbhashyam/chimenodes/archive/main.tar.gz"
+VERSION="1.0.7"
+WHEEL_NAME="chimerax_chimenodes-$VERSION-py3-none-any.whl"
+WHEEL_URL="https://github.com/anirudhbhashyam/chimenodes/releases/download/v$VERSION/$WHEEL_NAME"
+WHEEL_SHA256="a17c5920d563ff074de5c72ef2e3607f881838b7efd050a8fd06b53e05438b1a"
 BUNDLE_NAME="ChimeraX-Chimenodes"
 MIN_MAJOR=1
 MIN_MINOR=8
@@ -34,7 +36,7 @@ Usage: install.sh [options]
 
   --chimerax PATH   ChimeraX executable or .app bundle   (env CHIMERAX_EXE)
   --local DIR       install from a local checkout instead of downloading
-  --build-only      build the wheel into ./dist, do not install
+  --build-only      save the release wheel to ./dist (build it with --local)
   --uninstall       remove chimenodes from ChimeraX
   --dry-run         find ChimeraX and show what would happen, change nothing
   -h, --help        show this help
@@ -117,6 +119,101 @@ EOF
 # Run a ChimeraX command headless. stdin is detached: under `curl | sh` it is the script itself.
 cx_run() { "$CX" --nogui --exit --cmd "$1" </dev/null; }
 
+# Windows (Git Bash/MSYS) needs a native path in ChimeraX commands.
+native_path() {
+    path=$1
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*) if command -v cygpath >/dev/null 2>&1; then path=$(cygpath -m "$path") || return 1; fi ;;
+    esac
+    case "$path" in *\"*) die "refusing a path containing a double quote: $path" ;; esac
+    printf '%s\n' "$path"
+}
+
+wheel_sha256() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum < "$1"
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 < "$1"
+    else
+        die "need sha256sum or shasum to verify the release wheel"
+    fi
+}
+
+save_wheel() {
+    outdir="$(pwd)/dist"
+    mkdir -p "$outdir"
+    if ! [ "$1" -ef "$outdir/${1##*/}" ]; then
+        cp "$1" "$outdir"/
+    fi
+    info "Wheel written to $outdir"
+}
+
+install_release() {
+    if [ "$DRY" -eq 1 ]; then
+        if [ "$MODE" = build ]; then
+            say "(dry run) would download and verify $WHEEL_URL and save it to ./dist"
+        else
+            say "(dry run) would download and verify $WHEEL_URL and install it with toolshed install"
+        fi
+        exit 0
+    fi
+
+    info "Downloading $WHEEL_URL"
+    TMP=$(mktemp -d 2>/dev/null || mktemp -d -t chimenodes)
+    wheel="$TMP/$WHEEL_NAME"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o "$wheel" -- "$WHEEL_URL" </dev/null || die "download failed: $WHEEL_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$wheel" -- "$WHEEL_URL" </dev/null || die "download failed: $WHEEL_URL"
+    else
+        die "need curl or wget to download the release wheel"
+    fi
+    digest=$(wheel_sha256 "$wheel") || die "could not verify the release wheel"
+    [ "${digest%% *}" = "$WHEEL_SHA256" ] || die "SHA-256 mismatch for $WHEEL_NAME"
+
+    if [ "$MODE" = build ]; then
+        save_wheel "$wheel"
+        exit 0
+    fi
+
+    wheel_native=$(native_path "$wheel")
+    info "Installing $BUNDLE_NAME $VERSION (for the current user)"
+    cx_run "toolshed install \"$wheel_native\"" || die "installation failed"
+}
+
+install_local() {
+    [ -f "$LOCAL/bundle_info.xml" ] || die "no bundle_info.xml in --local directory: $LOCAL"
+    SRC=$(cd "$LOCAL" && pwd)
+    info "Using local source: $SRC"
+    SRC_NATIVE=$(native_path "$SRC")
+
+    if [ "$DRY" -eq 1 ]; then
+        if [ "$MODE" = build ]; then
+            say "(dry run) would run: $CX --nogui --exit --cmd 'devel build \"$SRC_NATIVE\"'"
+        else
+            say "(dry run) would run: $CX --nogui --exit --cmd 'devel install \"$SRC_NATIVE\" user true'"
+        fi
+        exit 0
+    fi
+
+    if [ "$MODE" = build ]; then
+        info "Building wheel"
+        cx_run "devel build \"$SRC_NATIVE\" exit true"
+        WHL=""
+        for w in "$SRC"/dist/*.whl; do
+            case "$w" in *editable*) continue ;; esac
+            [ -f "$w" ] && WHL="$w"
+        done
+        [ -n "$WHL" ] || die "build finished but no wheel was produced"
+        save_wheel "$WHL"
+        exit 0
+    fi
+
+    info "Building and installing $BUNDLE_NAME (for the current user)"
+    cx_run "devel install \"$SRC_NATIVE\" user true exit true" \
+        || die "installation failed. Re-run with --chimerax PATH if multiple ChimeraX versions exist."
+}
+
 main() {
     CX="${CHIMERAX_EXE:-}"
     LOCAL=""
@@ -161,66 +258,11 @@ main() {
         exit 0
     fi
 
-    # --- get the source ----------------------------------------------------------------
     if [ -n "$LOCAL" ]; then
-        [ -f "$LOCAL/bundle_info.xml" ] || die "no bundle_info.xml in --local directory: $LOCAL"
-        SRC=$(cd "$LOCAL" && pwd)
-        info "Using local source: $SRC"
+        install_local
     else
-        info "Downloading $SOURCE_URL"
-        if [ "$DRY" -eq 1 ]; then
-            say "(dry run) would download, build and install $BUNDLE_NAME from $SOURCE_URL"; exit 0
-        fi
-        TMP=$(mktemp -d 2>/dev/null || mktemp -d -t chimenodes)
-        if command -v curl >/dev/null 2>&1; then
-            curl -fsSL "$SOURCE_URL" -o "$TMP/src.tar.gz" </dev/null || die "download failed: $SOURCE_URL"
-        elif command -v wget >/dev/null 2>&1; then
-            wget -q -O "$TMP/src.tar.gz" "$SOURCE_URL" </dev/null || die "download failed: $SOURCE_URL"
-        else
-            die "need curl or wget to download the source"
-        fi
-        command -v tar >/dev/null 2>&1 || die "need tar to unpack the source"
-        mkdir "$TMP/src"
-        tar -xzf "$TMP/src.tar.gz" -C "$TMP/src" --strip-components=1 || die "could not unpack the download"
-        [ -f "$TMP/src/bundle_info.xml" ] || die "downloaded archive has no bundle_info.xml"
-        SRC="$TMP/src"
+        install_release
     fi
-
-    # Windows (Git Bash/MSYS): ChimeraX needs a native path
-    case "$(uname -s)" in
-        MINGW*|MSYS*|CYGWIN*) if command -v cygpath >/dev/null 2>&1; then SRC_NATIVE=$(cygpath -m "$SRC"); else SRC_NATIVE=$SRC; fi ;;
-        *) SRC_NATIVE=$SRC ;;
-    esac
-    case "$SRC_NATIVE" in *\"*) die "refusing a source path containing a double quote: $SRC_NATIVE" ;; esac
-
-    # --- build / install ---------------------------------------------------------------
-    if [ "$DRY" -eq 1 ]; then
-        if [ "$MODE" = build ]; then
-            say "(dry run) would run: $CX --nogui --exit --cmd 'devel build \"$SRC_NATIVE\"'"
-        else
-            say "(dry run) would run: $CX --nogui --exit --cmd 'devel install \"$SRC_NATIVE\" user true'"
-        fi
-        exit 0
-    fi
-
-    if [ "$MODE" = "build" ]; then
-        info "Building wheel"
-        cx_run "devel build \"$SRC_NATIVE\" exit true"
-        OUTDIR="$(pwd)/dist"; mkdir -p "$OUTDIR"
-        WHL=""
-        for w in "$SRC"/dist/*.whl; do
-            case "$w" in *editable*) continue ;; esac
-            [ -f "$w" ] && WHL="$w"
-        done
-        [ -n "$WHL" ] || die "build finished but no wheel was produced"
-        cp "$WHL" "$OUTDIR"/
-        info "Wheel written to $OUTDIR"
-        exit 0
-    fi
-
-    info "Building and installing $BUNDLE_NAME (for the current user)"
-    cx_run "devel install \"$SRC_NATIVE\" user true exit true" \
-        || die "installation failed. Re-run with --chimerax PATH if multiple ChimeraX versions exist."
 
     # --- verify ------------------------------------------------------------------------
     info "Verifying"
