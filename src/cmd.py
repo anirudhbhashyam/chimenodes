@@ -106,9 +106,6 @@ def _commit(session, params: Params, message: bool = True):
     from . import state
     ok = state.apply_params(session, params)
     if not ok and params.enabled:
-        # Fail safe to stock rendering (see ARCHITECTURE.md) with a warning rather than a
-        # hard error, so batch/offscreen scripts on a context without an OpenGL 3.3 core
-        # (headless or software GL) keep running instead of aborting mid-render.
         session.logger.warning(
             "chimenodes: could not enable the rendering pipeline "
             "(OpenGL 3.3 core required; see log) -- leaving stock rendering")
@@ -116,7 +113,6 @@ def _commit(session, params: Params, message: bool = True):
 
 
 def chimenodes(session, preset=None, focus=None, **kw):
-    from chimerax.core.errors import UserError
     from . import state
     base = state.get_params(session)
     over = keywords_to_overrides(kw)
@@ -126,11 +122,12 @@ def chimenodes(session, preset=None, focus=None, **kw):
     try:
         p = merge_params(base, pk, over, preset_name=preset or "")
     except (ValueError, KeyError) as e:
+        from chimerax.core.errors import UserError
         raise UserError("chimenodes: %s" % e)
     if preset or over:
         p.enabled = True
-    _commit(session, p)
-    session.logger.status("chimenodes: %s" % ("on" if p.enabled else "off"))
+    ok = _commit(session, p)
+    session.logger.status("chimenodes: %s" % ("on" if p.enabled and ok else "off"))
 
 
 def chimenodes_on(session):
