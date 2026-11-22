@@ -1,0 +1,65 @@
+# Open this example in a ChimeraX GUI session with chimenodes installed.
+# Barnase is chain A and barstar is chain D in PDB entry 1BRS.
+open 1brs id #1
+delete #1 & ~protein
+delete #1 & ~/A,D
+split #1
+
+hide #1 atoms
+cartoon #1
+color #1/A #5d79a8 target c
+surface #1/A enclose #1/A
+color #1/A #5d79a8 target s
+transparency #1/A 72 target s
+surface cap false
+color #1/D #fe166d target abc
+show ((#1/A :<4.5) & #1/D) atoms
+style #1/D stick
+size #1/D stickRadius 0.18
+# Hide the dashed pseudobond marking unresolved residues in barstar.
+hide #1.2.1 models
+
+set bgColor #100d15
+graphics silhouettes false
+camera mono fieldOfView 29
+clip off
+windowsize 1000 750
+chimenodes preset mn_default ao 1 glow 0 bloomRadius 0.22 tonemap agx exposure 0.1 vignette 0.24 glowLight 0 glowLightRadius 6.8 quality high
+material specularReflectivity 0
+
+# Camera and model matrices for the opening, contact, and final poses.
+view matrix models #1.2,0.973005918,0.013824636,-0.230365715,15.318909791,0.013824636,0.992919908,0.117978536,-3.351307442,0.230365715,-0.117978536,0.965925826,-12.219509738
+view matrix camera 0.824120411,0.414856804,0.385641518,106.428428437,-0.273011806,-0.305599665,0.912180575,228.099764773,0.496276236,-0.857031317,-0.138590116,-29.718264408
+cofr fixed 26.600634,39.278386,-1.030110
+view name binding_start
+
+# Restore barstar to the deposited pose at contact.
+view matrix models #1.2,1,0,0,0,0,1,0,0,0,0,1,0
+view matrix camera 0.776145778,0.444834682,0.446900254,103.551823089,-0.377113764,-0.240549540,0.894383099,207.233012262,0.505354272,-0.862703903,-0.018948228,-1.348331717
+cofr fixed 21.545641,43.113742,2.128668
+view name binding_contact
+
+view matrix camera 0.500936214,0.616804713,0.607136615,120.746473258,-0.775476022,0.008374824,0.631321490,147.353019613,0.384317403,-0.787071677,0.482512514,80.020709858
+cofr fixed 24.211752,46.972903,3.301220
+view name binding_end
+
+2dlabels create binding_title text chimenodes color #f4edf3 size 28 bold true xpos 0.048 ypos 0.921
+2dlabels create binding_pdb text "PDB 1BRS" color #9e91a4 size 15 xpos 0.049 ypos 0.878
+
+view binding_start
+cofr fixed 26.600634,39.278386,-1.030110
+# Uncomment the movie commands to record the animation at 30 fps.
+# movie record size 1600,1200 supersample 2 format png
+view binding_contact 89
+wait 72
+
+# Increase barstar emission, then settle it as the camera orbits.
+perframe "chimenodes glow #1/D strength $1 color #fe166d; chimenodes glow $3 glowLight $2; material specularReflectivity 0" frames 26 ranges 0,0.44 ranges 0,2.85 ranges 0,0.8
+wait 17
+cofr fixed 21.545641,43.113742,2.128668
+view binding_end 127
+wait 11
+perframe "chimenodes glow #1/D strength $1 color #fe166d; chimenodes glowLight $2; material specularReflectivity 0" frames 44 ranges 0.44,0.31 ranges 2.85,2.2
+wait 116
+# movie stop
+# movie encode 1brs-binding.mp4 framerate 30 quality high
