@@ -62,6 +62,9 @@ class _MyAPI(BundleAPI):
 
     @staticmethod
     def get_class(class_name):
+        if class_name == "ChimenodesState":
+            from .state import make_state_manager_class
+            return make_state_manager_class()
         return None
 
 

@@ -4,6 +4,7 @@ Pure helpers (snapshot_params / restore_params) have no ChimeraX dependency.
 """
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any, Dict, Optional
 
 from .params import Params
@@ -100,8 +101,9 @@ def get_params(session) -> Params:
     return _store(session).params
 
 
+@lru_cache(maxsize=1)
 def make_state_manager_class():
-    """Build the StateManager subclass lazily (needs chimerax.core)."""
+    """Share one lazy class between session registration and bundle class lookup."""
     from chimerax.core.state import StateManager
 
     class ChimenodesState(StateManager):
