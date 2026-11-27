@@ -11,8 +11,8 @@ import pytest
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SCRIPT = os.path.join(ROOT, "install.sh")
 RELEASE_WHEEL_URL = (
-    "https://github.com/anirudhbhashyam/chimenodes/releases/download/v1.0.7/"
-    "chimerax_chimenodes-1.0.7-py3-none-any.whl"
+    "https://github.com/anirudhbhashyam/chimenodes/releases/download/v1.0.8/"
+    "chimerax_chimenodes-1.0.8-py3-none-any.whl"
 )
 
 pytestmark = pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX shell script")

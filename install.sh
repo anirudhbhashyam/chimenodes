@@ -14,10 +14,10 @@
 
 set -eu
 
-VERSION="1.0.7"
+VERSION="1.0.8"
 WHEEL_NAME="chimerax_chimenodes-$VERSION-py3-none-any.whl"
 WHEEL_URL="https://github.com/anirudhbhashyam/chimenodes/releases/download/v$VERSION/$WHEEL_NAME"
-WHEEL_SHA256="a17c5920d563ff074de5c72ef2e3607f881838b7efd050a8fd06b53e05438b1a"
+WHEEL_SHA256="261ed5db03295d55313e10f33293ffa479dabdab9d3e77d002d8b5db5d41fb37"
 BUNDLE_NAME="ChimeraX-Chimenodes"
 MIN_MAJOR=1
 MIN_MINOR=8

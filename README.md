@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/anirudhbhashyam/chimenodes/main/ins
     sh chimenodes-install.sh
 ```
 
-The installer downloads the prebuilt wheel from the v1.0.7 GitHub release,
+The installer downloads the prebuilt wheel from the v1.0.8 GitHub release,
 verifies its SHA-256 checksum, and installs it for the current user.
 It finds ChimeraX on macOS, Linux and Windows
 (Git Bash) and stops with download instructions if it is missing (the ChimeraX license must be
